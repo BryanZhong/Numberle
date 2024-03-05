@@ -12,10 +12,10 @@ public class NumberleController {
     }
 
     public void startGame() {
-        view.displayWelcomeMessage();
+        System.out.println("欢迎来到Numberle！");
         while (!model.isGameOver()) {
-            view.displayCurrentInput(NumberleModel.listToString(model.playerInput));
-            view.displayPrompt();
+            System.out.println("当前输入：" + NumberleModel.listToString(model.playerInput));
+            System.out.println("请输入单个字符继续编辑或输入'd'删除最后一个值：");
             String input = scanner.nextLine().trim();
             if ("submit".equalsIgnoreCase(input) && model.playerInput.size() == NumberleModel.MAX_LENGTH) {
                 // 提交等式进行校验
@@ -29,6 +29,10 @@ public class NumberleController {
             }
         }
         // 游戏结束后显示结果
-        view.displayGameOver(false, model.targetEquation);
+        if (model.attempts >= 6) {
+            System.out.println("恭喜你猜对了！游戏胜利。谜底是：" + NumberleModel.targetEquation);
+        } else {
+            System.out.println("你已达到最大尝试次数。游戏结束。谜底是：" + NumberleModel.targetEquation);
+        }
     }
 }

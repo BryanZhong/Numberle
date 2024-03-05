@@ -9,7 +9,7 @@ public class NumberleModel {
     public static Set<Character> incorrectValues = new HashSet<>();
     public static String targetEquation;
     public List<Character> playerInput = new ArrayList<>();
-    private static int attempts = 0;
+    protected static int attempts = 0;
     private static Scanner scanner = new Scanner(System.in); // Static scanner for class-wide access
     public static ArrayList<String> history = new ArrayList<>();
 
@@ -31,15 +31,18 @@ public class NumberleModel {
         } else if (input.length() == 1 && VALID_CHARS.contains(input.charAt(0))) {
             // 检查是否是第一次输入且为运算符
             if (isFirstInputAndOperator(input.charAt(0), playerInput)) {
-                NumberleView.displayInvalidInputMessage();
+                //NumberleView.displayInvalidInputMessage();
+                System.out.println("无效输入，请确保输入合法字符，第一位输入不能为符号，且符号之间不相连。");
                 // 检查是否存在连续的运算符
             } else if (isConsecutiveOperator(input.charAt(0), playerInput)) {
-                NumberleView.displayInvalidInputMessage();
+                //NumberleView.displayInvalidInputMessage();
+                System.out.println("无效输入，请确保输入合法字符，第一位输入不能为符号，且符号之间不相连。");
             } else {
                 playerInput.add(input.charAt(0));
             }
         } else {
-            NumberleView.displayInvalidInputMessage();
+            //NumberleView.displayInvalidInputMessage();
+            System.out.println("无效输入，请确保输入合法字符，第一位输入不能为符号，且符号之间不相连。");
         }
     }
     public static boolean isFirstInputAndOperator(char input, List<Character> playerInput) {
@@ -95,7 +98,8 @@ public class NumberleModel {
         System.out.println(feedback.toString()); // 打印对比反馈
 
         if (!incorrectValues.isEmpty()) {
-            NumberleView.displayCompleteIncorrectValues(incorrectValues);
+            //NumberleView.displayCompleteIncorrectValues(incorrectValues);
+            System.out.println("完全错误的值：" + incorrectValues.toString());
         } else {
             System.out.println("没有完全错误的值。");
         }
@@ -105,7 +109,9 @@ public class NumberleModel {
             System.exit(0); // 游戏胜利，结束程序
         }else {
             // 在这里打印猜测次数信息
-            NumberleView.displayAttempts(attempts);
+            //NumberleView.displayAttempts(attempts);
+            System.out.println("当前为第 " + (attempts+1) + " 次猜测，你还有 " + (6 - attempts-1) + " 次机会。");
+
         }
     }
 
@@ -217,7 +223,14 @@ public class NumberleModel {
         // 检查游戏是否结束
         if (isGameOver()) {
             // 如果游戏结束，显示游戏结束信息并退出
-            NumberleView.displayGameOver(false, targetEquation);
+            //NumberleView.displayGameOver(false, targetEquation);
+            if (attempts >= 6) {
+                System.out.println("很遗憾，你没有在规定次数内猜对。游戏结束。");
+                System.exit(0);
+            }else {
+                System.out.println("恭喜你猜对了！游戏胜利。");
+                System.exit(0);
+            }
             System.exit(0);
         }
     }
