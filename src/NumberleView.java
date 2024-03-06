@@ -4,7 +4,11 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
 import java.io.IOException;
-import java.awt.geom.RoundRectangle2D; // Make sure to import this
+import java.awt.geom.RoundRectangle2D;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 
 public class NumberleView extends JPanel {
     private final int rows = 6;
@@ -15,6 +19,7 @@ public class NumberleView extends JPanel {
     private final String[][] matrix = new String[rows][cols];
     private int currentRow = 0;
     private int currentCol = 0;
+    private boolean isEnterPressed = false;
     public NumberleView() {
         setBackground(Color.decode("#FBFCFF"));
         // 初始化矩阵为空字符串
@@ -129,37 +134,71 @@ public class NumberleView extends JPanel {
         panel.add(button);
     }
     private ActionListener createActionListener(String label) {
-        return new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // 删除键的特殊处理
-                if (label.equals("Delete")) {
-                    if (currentCol > 0) {
-                        matrix[currentRow][--currentCol] = "";
-                    } else if (currentRow > 0) {
-                        currentRow--;
-                        currentCol = cols - 1;
-                        matrix[currentRow][currentCol] = "";
-                    }
-                } else if (label.equals("Enter")) {
-                    if (currentRow < rows - 1) {
-                        currentRow++;
-                        currentCol = 0;
-                    }
-                } else {
-                    if (currentCol < cols) {
-                        matrix[currentRow][currentCol++] = label;
-                        if (currentCol == cols && currentRow < rows - 1) {
-                            currentRow++;
-                            currentCol = 0;
-                        }
-                    }
+        return e -> {
+            if ("Delete".equals(label)) {
+                if (currentCol > 0) {
+                    matrix[currentRow][--currentCol] = "";
+                    isEnterPressed = false; // 重置 Enter 标志
+                } else if (currentRow > 0 && !isEnterPressed) {
+                    // 如果当前列为0，且不在第一行，且未按下 Enter 移动到这一行，不执行删除
                 }
-                repaint();
+            } else if ("Enter".equals(label)) {
+                if (currentRow < rows - 1) {
+                    currentRow++;
+                    currentCol = 0;
+                    isEnterPressed = true; // 标记已经按下 Enter
+                } else {
+                    showLimitDialog(); // 已到达输入限制
+                }
+            } else {
+                if (currentCol < cols) {
+                    matrix[currentRow][currentCol++] = label;
+                    isEnterPressed = false; // 重置 Enter 标志
+                } else {
+                    showLimitDialog(); // 当前行已满，显示限制对话框
+                }
             }
+            repaint();
         };
     }
 
+
+    private void showLimitDialog() {
+        JDialog dialog = new RoundedDialog(null, "您已达到输入限制");
+        dialog.setVisible(true);
+    }
+}
+
+ class RoundedDialog extends JDialog {
+    private String message;
+
+    public RoundedDialog(Frame owner, String message) {
+        super(owner, true);
+        setUndecorated(true);
+        setSize(300, 100);
+        setLocationRelativeTo(owner);
+        add(new JLabel(message, JLabel.CENTER));
+
+        // 点击对话框任何位置关闭对话框
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                dispose();
+            }
+        });
+
+        // 使用Timer实现自动消失
+        new Timer(1000, e -> dispose()).start();
+    }
+
+    @Override
+    public void paint(Graphics g) {
+        Graphics2D g2d = (Graphics2D) g.create();
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2d.setColor(getBackground());
+        g2d.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 30, 30)); // 绘制圆角矩形
+        super.paint(g);
+    }
 }
 class RoundedButton extends JButton {
     private static final int ARC_WIDTH = 10;
