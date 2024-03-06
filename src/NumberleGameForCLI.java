@@ -45,12 +45,12 @@ public class NumberleGameForCLI {
                     if ("y".equalsIgnoreCase(decision)) {
                         if (model.isValidEquation(model.listToString(playerInput))) {
                             model.compareEquations(model.listToString(playerInput), model.targetEquation);
-
+                            model.incrementAttempts();
                             playerInput.clear();
                         } else {
                             System.out.println("输入的等式不符合数学规则，请重新输入。");
                         }
-                        model.incrementAttempts();
+
                     }
                 }
             }

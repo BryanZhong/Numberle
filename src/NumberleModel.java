@@ -98,7 +98,6 @@ public class NumberleModel {
         System.out.println(feedback.toString()); // 打印对比反馈
 
         if (!incorrectValues.isEmpty()) {
-            //NumberleView.displayCompleteIncorrectValues(incorrectValues);
             System.out.println("完全错误的值：" + incorrectValues.toString());
         } else {
             System.out.println("没有完全错误的值。");
@@ -109,7 +108,6 @@ public class NumberleModel {
             System.exit(0); // 游戏胜利，结束程序
         }else {
             // 在这里打印猜测次数信息
-            //NumberleView.displayAttempts(attempts);
             System.out.println("当前为第 " + (attempts+1) + " 次猜测，你还有 " + (6 - attempts-1) + " 次机会。");
 
         }
@@ -236,6 +234,14 @@ public class NumberleModel {
     }
     public void clearPlayerInput() {
         playerInput.clear();
+    }
+    //把二维数组的某一行转换为字符串
+    public static String arrayToString(String[] arr) {
+        StringBuilder sb = new StringBuilder();
+        for (String ch : arr) {
+            sb.append(ch);
+        }
+        return sb.toString();
     }
 
 
