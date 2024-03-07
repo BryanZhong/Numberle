@@ -30,7 +30,8 @@ public class NumberleGameForCLI {
 
 
 
-            while (attempts < 6) {
+            while (attempts <= 5) {
+                System.out.println("-".repeat(20) + "当前输入：" + (attempts <= 5) + "-".repeat(20));
                 System.out.println("当前输入：" + model.listToString(playerInput));
                 System.out.println("请输入单个字符继续编辑或输入'd'删除最后一个值：");
                 String input = scanner.next();
@@ -40,11 +41,18 @@ public class NumberleGameForCLI {
 
                 // 提交并对比
                 if (playerInput.size() == model.MAX_LENGTH) {
-                    System.out.println("当前输入：" + NumberleModel.listToString(playerInput) + "。是否提交此答案? (y/n)");
                     String decision = scanner.next();
                     if ("y".equalsIgnoreCase(decision)) {
                         if (model.isValidEquation(model.listToString(playerInput))) {
-                            model.compareEquations(model.listToString(playerInput), model.targetEquation);
+                            String result;
+                            result=model.compareEquations(model.listToString(playerInput), model.targetEquation);
+                            System.out.println(result);
+                            if(result=="Win"){
+                                System.exit(0);
+                            }
+                            if(result=="Lose"){
+                                System.exit(0);
+                            }
                             model.incrementAttempts();
                             playerInput.clear();
                         } else {
@@ -55,6 +63,7 @@ public class NumberleGameForCLI {
                 }
             }
             System.out.println("你已达到最大尝试次数。游戏结束。");
+            System.exit(0);
         } catch (Exception e) {
             System.out.println("加载失败：" + e);
         }

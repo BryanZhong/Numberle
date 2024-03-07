@@ -21,6 +21,7 @@ public class NumberleView extends JPanel {
     private int currentRow = 0;
     private int currentCol = 0;
     private boolean isEnterPressed = false;
+
     public NumberleView() {
         setBackground(Color.decode("#FBFCFF"));
         // 初始化矩阵为空字符串
@@ -31,6 +32,7 @@ public class NumberleView extends JPanel {
         }
         try {
             model.targetEquation = model.loadAndSelectEquation("C:\\Users\\m1355\\Desktop\\equations.txt");
+            System.out.println("目标等式：" + model.targetEquation);
         } catch (Exception e) {
             e.printStackTrace(); // 打印错误信息
             JOptionPane.showMessageDialog(null, "Failed to load equations: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -71,15 +73,27 @@ public class NumberleView extends JPanel {
         Font customFont = loadFont("D:/download/Montserrat,Open_Sans/Montserrat/Montserrat-VariableFont_wght.ttf", 28f).deriveFont(Font.BOLD);
         g2d.setFont(customFont);
         g2d.setColor(new Color(0x393E4C)); // Set text color
-
+        String[][] matrix_print = new String[rows][cols];
+        for (int i = 0; i< matrix.length; i++) {
+            for (int j = 0; j< matrix[i].length; j++) {
+               if (matrix[i][j].equals("*")) {
+                   matrix_print[i][j] = "x";
+               } else if (matrix[i][j].equals("/")) {
+                   matrix_print[i][j] = "÷";
+               }
+               else {
+                   matrix_print[i][j] = matrix[i][j];
+               }
+            }
+        }
         FontMetrics fm = g2d.getFontMetrics();
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
-                if (!matrix[i][j].isEmpty()) {
-                    int textWidth = fm.stringWidth(matrix[i][j]);
+                if (!matrix_print[i][j].isEmpty()) {
+                    int textWidth = fm.stringWidth(matrix_print[i][j]);
                     int textX = startX + j * (rectWidth + gap) + (rectWidth - textWidth) / 2;
                     int textY = startY + i * (rectHeight + gap) + ((rectHeight - fm.getHeight()) / 2) + fm.getAscent();
-                    g2d.drawString(matrix[i][j], textX, textY);
+                    g2d.drawString(matrix_print[i][j], textX, textY);
                 }
             }
         }
@@ -145,15 +159,27 @@ public class NumberleView extends JPanel {
             return new JButton().getFont();
         }
     }
+
     private static void addButton(JPanel panel, String label, int width, int height, ActionListener actionListener) {
         RoundedButton button = new RoundedButton(label);
         button.setPreferredSize(new Dimension(width, height));
         button.addActionListener(actionListener);
         panel.add(button);
     }
+
     private ActionListener createActionListener(String label) {
         return e -> {
-            if ("Delete".equals(label)) {
+            if (NumberleModel.gameIsOver) {
+                return; // 直接返回，不执行任何操作
+            }
+            String transformedLabel = label;
+            // 将UI使用的符号转换为Java识别的符号
+            if ("×".equals(label)) {
+                transformedLabel = "*";
+            } else if ("÷".equals(label)) {
+                transformedLabel = "/";
+            }
+            if ("Delete".equals(transformedLabel)) {
                 if (currentCol > 0) {
                     matrix[currentRow][--currentCol] = ""; // 删除当前行的最后一个字符
                     isEnterPressed = false; // 重置 Enter 标志
@@ -161,33 +187,47 @@ public class NumberleView extends JPanel {
                     // 如果当前列为 0，且不在第一行，且未按下 Enter 移动到这一行，不执行删除
                     showLimitDialog("Cannot delete previous row!");
                 }
-            } else if ("Enter".equals(label)) {
+            } else if ("Enter".equals(transformedLabel)) {
                 if (currentCol == cols) { // 如果当前行已满
                     if (currentRow < rows - 1) { // 并且不是最后一行
-                        currentRow++;
-                        currentCol = 0;
-                        if((model.isValidEquation(model.arrayToString(matrix[currentRow - 1])))==true) {
-                        model.compareEquations(NumberleModel.arrayToString(matrix[currentRow - 1]), model.targetEquation);
-                        model.incrementAttempts();
-                        isEnterPressed = true; // 标记已经按下 Enter
-                        }else {
-                            currentRow--;
-                            currentCol = 7;
+                        if ((model.isValidEquation(model.arrayToString(matrix[currentRow]))) == true) {
+                            String result=model.compareEquations(NumberleModel.arrayToString(matrix[currentRow]), model.targetEquation);
+                            if (result=="Win") {
+                                showLimitDialog("GameOver!You Win!");
+                            } else if (result=="Continue") {
+                                model.incrementAttempts();
+                                showLimitDialog("You have " + (6 - model.attempts) + " chances left.");
+                                currentRow++;
+                                currentCol = 0;
+                            } else {
+                                model.incrementAttempts();
+                                isEnterPressed = true; // 标记已经按下 Enter
+                            }
+                        } else {
                             showLimitDialog("Invalid Equation!");
                         }
 
                     } else {
-                        showLimitDialog("Max Rows Reached!"); // 已达到最大行数限制
+                            if ((model.isValidEquation(model.arrayToString(matrix[currentRow]))) == true) {
+                                String result = model.compareEquations(NumberleModel.arrayToString(matrix[currentRow]), model.targetEquation);
+                                model.incrementAttempts();
+                                isEnterPressed = true; // 标记已经按下 Enter
+                                if(result=="Win"){
+                                    showLimitDialog("GameOver!You Win!");
+                                } else {
+                                        showLimitDialog("GameOver!You Lose!");
+                                }
+                            } else {
+                                showLimitDialog("Invalid Equation!");
+                            }
                     }
-                } else if (currentCol == 0) { // 如果当前行未填充任何字符
-                    showLimitDialog("Too Short!"); // 输入过短
                 } else {
                     // 如果当前行未满且已有输入，显示输入过短的提示
                     showLimitDialog("Too Short!");
                 }
             } else {
                 if (currentCol < cols) { // 如果当前行未满
-                    matrix[currentRow][currentCol++] = label; // 添加输入到当前位置
+                    matrix[currentRow][currentCol++] = transformedLabel; // 添加输入到当前位置
                     isEnterPressed = false; // 重置 Enter 标志
                 } else {
                     showLimitDialog("Input limit reached"); // 当前行已满，显示限制对话框
@@ -196,7 +236,6 @@ public class NumberleView extends JPanel {
             repaint(); // 重绘以显示更新
         };
     }
-
 
 
     private void showLimitDialog(String message) {
@@ -235,8 +274,6 @@ public class NumberleView extends JPanel {
 
 
 }
-
-
 
 
 class RoundedButton extends JButton {

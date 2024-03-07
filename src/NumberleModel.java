@@ -1,3 +1,4 @@
+import javax.swing.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -12,6 +13,8 @@ public class NumberleModel {
     protected static int attempts = 0;
     private static Scanner scanner = new Scanner(System.in); // Static scanner for class-wide access
     public static ArrayList<String> history = new ArrayList<>();
+
+    public static boolean gameIsOver = false;
 
     public NumberleModel() {
         //初始化incorrectValues，在游戏开始前清空，以处理多次游戏运行的情况
@@ -74,10 +77,10 @@ public class NumberleModel {
         return sb.toString();
     }
 
-    public static void compareEquations(String playerEq, String targetEq) {
+    public static String compareEquations(String playerEq, String targetEq) {
         StringBuilder feedback = new StringBuilder();
-        boolean isAllCorrect = true; // 假设玩家输入完全正确
 
+        boolean isAllCorrect = true; // 假设玩家输入完全正确
         for (int i = 0; i < playerEq.length(); i++) {
             char pChar = playerEq.charAt(i);
             char tChar = targetEq.charAt(i);
@@ -105,15 +108,24 @@ public class NumberleModel {
 
         if (isAllCorrect) {
             System.out.println("恭喜你猜对了！游戏胜利。");
-            System.exit(0); // 游戏胜利，结束程序
-        }else {
+            setGameOver(true);
+            return "Win";
+        }else if(attempts<5) {
             // 在这里打印猜测次数信息
             System.out.println("当前为第 " + (attempts+1) + " 次猜测，你还有 " + (6 - attempts-1) + " 次机会。");
-
+            setGameOver(false);
+            return "Continue";
+        }else {
+            System.out.println("很遗憾，你没有在规定次数内猜对。游戏结束。");
+            setGameOver(true);
+            return "Lose";
         }
     }
 
 
+    public static void setGameOver(boolean isOver) {
+        gameIsOver = isOver;
+    }
 
     // 解析和计算等式两边的值
     public static boolean isValidEquation(String equation) {
@@ -207,7 +219,7 @@ public class NumberleModel {
     public static boolean isGameOver() {
         if (attempts >= 6) {
             System.out.println("很遗憾，你没有在规定次数内猜对。游戏结束。");
-            System.exit(0); // 游戏失败，结束程序
+            JOptionPane.showMessageDialog(null, "游戏结束，您的分数是：XXX分", "游戏结束", JOptionPane.INFORMATION_MESSAGE);
         }
         return false;
     }
@@ -224,12 +236,10 @@ public class NumberleModel {
             //NumberleView.displayGameOver(false, targetEquation);
             if (attempts >= 6) {
                 System.out.println("很遗憾，你没有在规定次数内猜对。游戏结束。");
-                System.exit(0);
+                JOptionPane.showMessageDialog(null, "游戏结束，您的分数是：XXX分", "游戏结束", JOptionPane.INFORMATION_MESSAGE);
             }else {
                 System.out.println("恭喜你猜对了！游戏胜利。");
-                System.exit(0);
             }
-            System.exit(0);
         }
     }
     public void clearPlayerInput() {
