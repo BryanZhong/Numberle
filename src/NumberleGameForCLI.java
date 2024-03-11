@@ -13,7 +13,7 @@ public class NumberleGameForCLI {
             String choice = scanner.nextLine().trim();
             if ("y".equalsIgnoreCase(choice)) {
                 try {
-                    model.targetEquation = model.loadAndSelectEquation("C:\\Users\\m1355\\Desktop\\equations.txt"); // 更新文件路径为实际路径
+                    model.targetEquation = model.loadAndSelectEquation("equations.txt"); // 更新文件路径为实际路径
                 } catch (Exception e) {
                     System.out.println("加载失败：" + e);
                 }

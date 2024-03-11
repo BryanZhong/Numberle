@@ -31,7 +31,7 @@ public class NumberleView extends JPanel {
             }
         }
         try {
-            model.targetEquation = model.loadAndSelectEquation("C:\\Users\\m1355\\Desktop\\equations.txt");
+            model.targetEquation = model.loadAndSelectEquation("equations.txt");
             System.out.println("目标等式：" + model.targetEquation);
         } catch (Exception e) {
             e.printStackTrace(); // 打印错误信息

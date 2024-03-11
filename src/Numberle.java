@@ -3,7 +3,7 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class Numberle {
-    private static final int MAX_LENGTH = 7; // 最大长度限制
+    public static final int MAX_LENGTH = 7; // 最大长度限制
     private static Set<Character> incorrectValues = new HashSet<>();// 存储完全错误的值
     private static final List<Character> VALID_CHARS = List.of('1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '+', '-', '*', '/', '=');
 
