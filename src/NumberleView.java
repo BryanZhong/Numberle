@@ -1,7 +1,9 @@
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.awt.geom.RoundRectangle2D;
@@ -106,10 +108,32 @@ public class NumberleView extends JPanel {
         JFrame frame = new JFrame("Numberle");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout());
-
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.setBackground(Color.decode("#FBFCFF"));
+        frame.add(topPanel, BorderLayout.NORTH);
         NumberleView panel = new NumberleView();
         frame.add(panel, BorderLayout.CENTER);
+        panel.setLayout(new BorderLayout()); // 设置布局管理器为 BorderLayout
+// 创建左侧Logo面板，并使用适当的布局
+        JPanel logoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        logoPanel.setOpaque(false); // 如果需要，可以设置为透明
+// 假设有一个名为logoLabel的JLabel作为Logo
+        JLabel logoLabel = new JLabel(new ImageIcon("../Numberle/icon/logo.png"));
+        logoPanel.add(logoLabel);
+// 加载并添加Name.png图像
+        ImageIcon nameIcon = new ImageIcon("../Numberle/icon/Name.png");
+        JLabel nameLabel = new JLabel(nameIcon);
+        logoPanel.add(nameLabel);
+// 创建右侧按钮面板，并使用适当的布局
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttonPanel.setOpaque(false); // 如果需要，可以设置为透明
+// 假设已经创建了settingsButton
+        ImageToggleButton settingsButton = new ImageToggleButton("../Numberle/icon/setting.png", "../Numberle/icon/settingSelected.png");
+        buttonPanel.add(settingsButton);
 
+// 将两个面板添加到顶部容器中
+        topPanel.add(logoPanel, BorderLayout.WEST);
+        topPanel.add(buttonPanel, BorderLayout.EAST);
         JPanel buttonsPanel = new JPanel(new GridLayout(2, 1, 3, 3));
         buttonsPanel.setBackground(Color.decode("#FBFCFF"));
         frame.add(buttonsPanel, BorderLayout.SOUTH);
@@ -360,5 +384,81 @@ class RoundedButton extends JButton {
     @Override
     public Dimension getPreferredSize() {
         return new Dimension(super.getPreferredSize().width, 56);
+    }
+}
+
+
+class ImageToggleButton extends JButton {
+    private BufferedImage imageDefault;
+    private BufferedImage imageSelected;
+    private static final int ARC_WIDTH = 10;
+    private static final int ARC_HEIGHT = 10;
+    private static final Color BACKGROUND_COLOR = Color.decode("#DCE1ED");
+    private static final Color HOVER_COLOR = Color.GRAY;
+    private static final Color PRESSED_COLOR = Color.decode("#4B5464");
+
+    public ImageToggleButton(String imgDefaultPath, String imgSelectedPath) {
+        try {
+            imageDefault = ImageIO.read(new File(imgDefaultPath));
+            imageSelected = ImageIO.read(new File(imgSelectedPath));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        setPreferredSize(new Dimension(28, 28));
+        setOpaque(false);
+        setFocusPainted(false);
+        setBorderPainted(false);
+        setContentAreaFilled(false);
+        setBackground(BACKGROUND_COLOR);
+
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                setBackground(HOVER_COLOR);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                setBackground(BACKGROUND_COLOR);
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                setBackground(PRESSED_COLOR);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (getBounds().contains(e.getPoint())) {
+                    setBackground(HOVER_COLOR);
+                } else {
+                    setBackground(BACKGROUND_COLOR);
+                }
+            }
+        });
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2d = (Graphics2D) g;
+        // 开启抗锯齿渲染提示
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        // 设置渲染质量为高质量
+        g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        // 设置图像插值渲染提示为双三次插值，这在图像缩放时可以提供更平滑的结果
+        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        // Draw the rounded background
+        g2d.setColor(getBackground());
+        g2d.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), ARC_WIDTH, ARC_HEIGHT));
+
+        // Draw the button image
+        BufferedImage img = getModel().isPressed() || getModel().isRollover() ? imageSelected : imageDefault;
+        if (img != null) {
+            int x = (getWidth() - img.getWidth()) / 2;
+            int y = (getHeight() - img.getHeight()) / 2;
+            g2d.drawImage(img, x, y, this);
+        }
     }
 }
