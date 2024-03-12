@@ -169,6 +169,9 @@ public class NumberleView extends JPanel {
         // 假设已经创建了settingsButton
         ImageToggleButton settingsButton = new ImageToggleButton("../Numberle/icon/setting.svg", "../Numberle/icon/settingSelected.svg");
         buttonPanel.add(settingsButton);
+        settingsButton.addActionListener(e -> {
+            showSettingsDialog();
+        });
 
         // 将两个面板添加到顶部容器中
         topPanel.add(buttonPanel, BorderLayout.EAST);
@@ -209,6 +212,37 @@ public class NumberleView extends JPanel {
                 panel.repaint();
             }
         });
+    }
+    public static void showSettingsDialog() {
+        JDialog settingsDialog = new JDialog();
+        settingsDialog.setTitle("Settings");
+        settingsDialog.setSize(300, 200); // 设置对话框大小
+        settingsDialog.setLocationRelativeTo(null); // 居中显示
+        settingsDialog.setLayout(new BoxLayout(settingsDialog.getContentPane(), BoxLayout.Y_AXIS)); // 使用Box布局
+
+        settingsDialog.add(Box.createVerticalGlue()); // 添加一个垂直的弹性空间
+
+        // 添加一个重新开始按钮
+        JButton restartButton = new RoundedButton("Restart");
+        restartButton.setAlignmentX(Component.CENTER_ALIGNMENT); // 设置按钮居中
+        settingsDialog.add(restartButton);
+        restartButton.addActionListener(e -> {
+            // 弹出一个确认对话框，确认后重新开始游戏
+            int result = JOptionPane.showConfirmDialog(settingsDialog, "Are you sure you want to restart the game?", "Restart Game", JOptionPane.YES_NO_OPTION);
+            if (result == JOptionPane.YES_OPTION) {
+                System.out.println("Restarting game...");
+                // 重新开始游戏的逻辑
+            }
+        });
+
+        // 添加第二个按钮，例如“展示答案”的复选框
+        JCheckBox showAnswerCheckbox = new JCheckBox("Show Answer", false);
+        showAnswerCheckbox.setAlignmentX(Component.CENTER_ALIGNMENT); // 设置复选框居中
+        settingsDialog.add(showAnswerCheckbox);
+
+        settingsDialog.add(Box.createVerticalGlue()); // 再添加一个垂直的弹性空间
+
+        settingsDialog.setVisible(true);
     }
 
     private static Font loadFont(String path, float size) {
