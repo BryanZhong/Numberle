@@ -39,12 +39,11 @@ public class NumberleModel {
         } else if (input.length() == 1 && VALID_CHARS.contains(input.charAt(0))) {
             // 检查是否是第一次输入且为运算符
             if (isFirstInputAndOperator(input.charAt(0), playerInput)) {
-                //NumberleView.displayInvalidInputMessage();
                 System.out.println("无效输入，请确保输入合法字符，第一位输入不能为符号，且符号之间不相连。");
                 // 检查是否存在连续的运算符
             } else if (isConsecutiveOperator(input.charAt(0), playerInput)) {
-                //NumberleView.displayInvalidInputMessage();
                 System.out.println("无效输入，请确保输入合法字符，第一位输入不能为符号，且符号之间不相连。");
+                // 检查是否包含运算符号
             } else {
                 playerInput.add(input.charAt(0));
             }
@@ -53,6 +52,23 @@ public class NumberleModel {
             System.out.println("无效输入，请确保输入合法字符，第一位输入不能为符号，且符号之间不相连。");
         }
     }
+    //检查输入的等式是否包含运算符号“+”，“-”，“*”，“/”
+    public static boolean isHaveOperationSymbol(String playerInput) {
+        List<String> operationSymbols = Arrays.asList("+", "-", "*", "/");
+        for (int i = 0; i < playerInput.length(); i++) {
+            // Convert each character to String because operationSymbols is a list of String
+            String currentCharAsString = String.valueOf(playerInput.charAt(i));
+            if (operationSymbols.contains(currentCharAsString)) {
+                return true; // Found an operation symbol in the input
+            }
+        }
+        return false; // No operation symbol found
+    }
+    //检查输入的等式是否包含等号“=”
+    public static boolean isHaveEqualSymbol(String playerInput) {
+        return playerInput.contains("=");
+    }
+
     public static boolean isFirstInputAndOperator(char input, List<Character> playerInput) {
         // 检查是否为第一个输入且为运算符
         return playerInput.isEmpty() && isOperator(input);
@@ -145,7 +161,6 @@ public class NumberleModel {
         if (parts.length != 2) {
             return false; // 等式必须只有一个等号，并且能够分成两部分
         }
-
         try {
             double leftValue = evaluate(parts[0]);
             double rightValue = evaluate(parts[1]);
@@ -231,7 +246,6 @@ public class NumberleModel {
     public static boolean isGameOver() {
         if (attempts >= 6) {
             System.out.println("很遗憾，你没有在规定次数内猜对。游戏结束。");
-            JOptionPane.showMessageDialog(null, "游戏结束，您的分数是：XXX分", "游戏结束", JOptionPane.INFORMATION_MESSAGE);
         }
         return false;
     }

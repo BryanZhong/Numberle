@@ -1,6 +1,5 @@
 import com.kitfox.svg.SVGDiagram;
 import com.kitfox.svg.SVGUniverse;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -29,7 +28,6 @@ public class NumberleView extends JPanel {
     static final Color COLOR_CORRECT = Color.decode("#1BB295");
     static final Color COLOR_WRONG_POSITION = Color.decode("#F79A6F");
     static final Color COLOR_INCORRECT = Color.decode("#A4AEC4");
-    static final Color COLOR_DEFAULT = Color.decode("#FBFCFF"); // 默认颜色
     static java.util.List<RoundedButton> buttons = new ArrayList<>();
 
 
@@ -255,6 +253,16 @@ public class NumberleView extends JPanel {
             } else if ("Enter".equals(transformedLabel)) {
                 if (currentCol == cols) { // 如果当前行已满
                     if (currentRow < rows - 1) { // 并且不是最后一行
+                        if (!NumberleModel.isHaveOperationSymbol(model.arrayToString(matrix[currentRow]))) {
+                            // 如果不包含运算符，显示错误提示并让用户修改输入
+                            showLimitDialog("Missing Operator!");
+                            return; // 直接返回，不提交等式
+                        }
+                        if (!NumberleModel.isHaveEqualSymbol(model.arrayToString(matrix[currentRow]))) {
+                            // 如果不包含等号，显示错误提示并让用户修改输入
+                            showLimitDialog("No Equal\'=\' Sign!");
+                            return; // 直接返回，不提交等式
+                        }
                         if ((model.isValidEquation(model.arrayToString(matrix[currentRow]))) == true) {
                             String result=model.compareEquations(NumberleModel.arrayToString(matrix[currentRow]), model.targetEquation);
                             if (result=="Win") {
