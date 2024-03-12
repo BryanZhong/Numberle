@@ -1,9 +1,9 @@
-import javax.imageio.ImageIO;
+import com.kitfox.svg.SVGDiagram;
+import com.kitfox.svg.SVGUniverse;
+
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.awt.geom.RoundRectangle2D;
@@ -11,6 +11,9 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.net.URI;
+import java.util.ArrayList;
+
 
 public class NumberleView extends JPanel {
     NumberleModel model = new NumberleModel();
@@ -23,6 +26,12 @@ public class NumberleView extends JPanel {
     private int currentRow = 0;
     private int currentCol = 0;
     private boolean isEnterPressed = false;
+    static final Color COLOR_CORRECT = Color.decode("#1BB295");
+    static final Color COLOR_WRONG_POSITION = Color.decode("#F79A6F");
+    static final Color COLOR_INCORRECT = Color.decode("#A4AEC4");
+    static final Color COLOR_DEFAULT = Color.decode("#FBFCFF"); // 默认颜色
+    static java.util.List<RoundedButton> buttons = new ArrayList<>();
+
 
     public NumberleView() {
         setBackground(Color.decode("#FBFCFF"));
@@ -91,11 +100,43 @@ public class NumberleView extends JPanel {
         FontMetrics fm = g2d.getFontMetrics();
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
-                if (!matrix_print[i][j].isEmpty()) {
-                    int textWidth = fm.stringWidth(matrix_print[i][j]);
+                int x = startX + j * (rectWidth + gap);
+                int y = startY + i * (rectHeight + gap);
+
+                // 根据 feedbackMatrix 中的状态选择背景色
+                Color backgroundColor = Color.decode("#FBFCFF"); // 默认背景色
+                if (model.feedbackMatrix[i][j] == CharacterFeedback.CORRECT) {
+                    backgroundColor = Color.decode("#1BB295");
+                } else if (model.feedbackMatrix[i][j] == CharacterFeedback.WRONG_POSITION) {
+                    backgroundColor = Color.decode("#F79A6F");
+                } else if (model.feedbackMatrix[i][j] == CharacterFeedback.INCORRECT) {
+                    backgroundColor = Color.decode("#A4AEC4");
+                }
+                g2d.setColor(backgroundColor);
+                g2d.fillRoundRect(x, y, rectWidth, rectHeight, cornerRadius, cornerRadius);
+            }
+        }
+
+        // 绘制边框
+        g2d.setColor(Color.decode("#B1B1B1"));
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                int x = startX + j * (rectWidth + gap);
+                int y = startY + i * (rectHeight + gap);
+                g2d.drawRoundRect(x, y, rectWidth, rectHeight, cornerRadius, cornerRadius);
+            }
+        }
+
+        // 绘制文字
+        g2d.setColor(Color.decode("#393E4C")); // 文字颜色
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                if (!matrix[i][j].isEmpty()) {
+                    String text = matrix[i][j].replace("*", "x").replace("/", "÷");
+                    int textWidth = fm.stringWidth(text);
                     int textX = startX + j * (rectWidth + gap) + (rectWidth - textWidth) / 2;
                     int textY = startY + i * (rectHeight + gap) + ((rectHeight - fm.getHeight()) / 2) + fm.getAscent();
-                    g2d.drawString(matrix_print[i][j], textX, textY);
+                    g2d.drawString(text, textX, textY);
                 }
             }
         }
@@ -114,25 +155,24 @@ public class NumberleView extends JPanel {
         NumberleView panel = new NumberleView();
         frame.add(panel, BorderLayout.CENTER);
         panel.setLayout(new BorderLayout()); // 设置布局管理器为 BorderLayout
-// 创建左侧Logo面板，并使用适当的布局
-        JPanel logoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+
+        // Replace the existing JLabel for logo with SVGPanel
+        SVGPanel logoPanel = new SVGPanel("../Numberle/icon/logo1.svg");
         logoPanel.setOpaque(false); // 如果需要，可以设置为透明
-// 假设有一个名为logoLabel的JLabel作为Logo
-        JLabel logoLabel = new JLabel(new ImageIcon("../Numberle/icon/logo.png"));
-        logoPanel.add(logoLabel);
-// 加载并添加Name.png图像
-        ImageIcon nameIcon = new ImageIcon("../Numberle/icon/Name.png");
-        JLabel nameLabel = new JLabel(nameIcon);
-        logoPanel.add(nameLabel);
-// 创建右侧按钮面板，并使用适当的布局
+        topPanel.add(logoPanel, BorderLayout.WEST);
+
+        // Do the same for the name SVG, if applicable
+        SVGPanel namePanel = new SVGPanel("../Numberle/icon/name.svg");
+        topPanel.add(namePanel);
+
+        // 创建右侧按钮面板，并使用适当的布局
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         buttonPanel.setOpaque(false); // 如果需要，可以设置为透明
-// 假设已经创建了settingsButton
-        ImageToggleButton settingsButton = new ImageToggleButton("../Numberle/icon/setting.png", "../Numberle/icon/settingSelected.png");
+        // 假设已经创建了settingsButton
+        ImageToggleButton settingsButton = new ImageToggleButton("../Numberle/icon/setting.svg", "../Numberle/icon/settingSelected.svg");
         buttonPanel.add(settingsButton);
 
-// 将两个面板添加到顶部容器中
-        topPanel.add(logoPanel, BorderLayout.WEST);
+        // 将两个面板添加到顶部容器中
         topPanel.add(buttonPanel, BorderLayout.EAST);
         JPanel buttonsPanel = new JPanel(new GridLayout(2, 1, 3, 3));
         buttonsPanel.setBackground(Color.decode("#FBFCFF"));
@@ -189,6 +229,7 @@ public class NumberleView extends JPanel {
         button.setPreferredSize(new Dimension(width, height));
         button.addActionListener(actionListener);
         panel.add(button);
+        buttons.add(button);
     }
 
     private ActionListener createActionListener(String label) {
@@ -217,13 +258,16 @@ public class NumberleView extends JPanel {
                         if ((model.isValidEquation(model.arrayToString(matrix[currentRow]))) == true) {
                             String result=model.compareEquations(NumberleModel.arrayToString(matrix[currentRow]), model.targetEquation);
                             if (result=="Win") {
+                                RoundedButton.updateButtonColors(buttons, model.CORRECT, model.INCORRECT, model.WRONG_POSITION);
                                 showLimitDialog("GameOver!You Win!");
                             } else if (result=="Continue") {
                                 model.incrementAttempts();
+                                RoundedButton.updateButtonColors(buttons, model.CORRECT, model.INCORRECT, model.WRONG_POSITION);
                                 showLimitDialog("You have " + (6 - model.attempts) + " chances left.");
                                 currentRow++;
                                 currentCol = 0;
                             } else {
+                                RoundedButton.updateButtonColors(buttons, model.CORRECT, model.INCORRECT, model.WRONG_POSITION);
                                 model.incrementAttempts();
                                 isEnterPressed = true; // 标记已经按下 Enter
                             }
@@ -307,7 +351,7 @@ class RoundedButton extends JButton {
     private static final Color FONT_COLOR = new Color(0x393E4C); // 更新为稍深的颜色
     private static final Color HOVER_COLOR = Color.GRAY;
     private static final Color PRESSED_COLOR = Color.decode("#4B5464");
-
+    private boolean colorSetByGame = false;
     public RoundedButton(String text) {
         super(text);
         // 更新setFont调用以包含Font.BOLD
@@ -321,44 +365,39 @@ class RoundedButton extends JButton {
         setContentAreaFilled(false);
 
         // 鼠标悬停效果
-        addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                setBackground(HOVER_COLOR);
-            }
-
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                setBackground(BACKGROUND_COLOR);
-            }
-        });
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent evt) {
-                if (!getModel().isPressed()) {
+                if (!getModel().isPressed() && !colorSetByGame) {
                     setBackground(HOVER_COLOR);
                 }
             }
 
             @Override
             public void mouseExited(MouseEvent evt) {
-                if (!getModel().isPressed()) {
+                if (!getModel().isPressed() && !colorSetByGame) {
                     setBackground(BACKGROUND_COLOR);
                 }
             }
 
             @Override
             public void mousePressed(MouseEvent evt) {
-                setBackground(PRESSED_COLOR);
+                if (!colorSetByGame) {
+                    setBackground(PRESSED_COLOR);
+                }
             }
 
             @Override
             public void mouseReleased(MouseEvent evt) {
-                if (getBounds().contains(evt.getPoint())) {
-                    setBackground(HOVER_COLOR);
-                } else {
-                    setBackground(BACKGROUND_COLOR);
+                if (!colorSetByGame) {
+                    setBackground(getBounds().contains(evt.getPoint()) ? HOVER_COLOR : BACKGROUND_COLOR);
                 }
             }
         });
+    }
+    public void setColorByGame(Color color) {
+        setBackground(color);
+        colorSetByGame = true;
     }
 
     @Override
@@ -369,6 +408,22 @@ class RoundedButton extends JButton {
         g2d.fill(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, ARC_WIDTH, ARC_HEIGHT));
         super.paintComponent(g);
     }
+    public static void updateButtonColors(java.util.List<RoundedButton> buttons, ArrayList<String> CORRECT, ArrayList<String> INCORRECT, ArrayList<String> WRONG_POSITION) {
+        // 遍历所有按钮，根据它们的标签更新背景颜色
+        for (RoundedButton button : buttons) {
+            String buttonText = button.getText();
+            if (CORRECT.contains(buttonText)) {
+                button.setColorByGame(NumberleView.COLOR_CORRECT);
+            } else if (WRONG_POSITION.contains(buttonText)) {
+                button.setColorByGame(NumberleView.COLOR_WRONG_POSITION);
+            } else if (INCORRECT.contains(buttonText)) {
+                button.setColorByGame(NumberleView.COLOR_INCORRECT);
+            } // 不涉及到的按钮不做改变，所以这里没有else分支
+            button.repaint();
+        }
+
+    }
+
 
     private static Font loadFont(String path, float size) {
         try {
@@ -389,19 +444,22 @@ class RoundedButton extends JButton {
 
 
 class ImageToggleButton extends JButton {
-    private BufferedImage imageDefault;
-    private BufferedImage imageSelected;
+    private SVGDiagram imageDefault;
+    private SVGDiagram imageSelected;
     private static final int ARC_WIDTH = 10;
     private static final int ARC_HEIGHT = 10;
     private static final Color BACKGROUND_COLOR = Color.decode("#DCE1ED");
-    private static final Color HOVER_COLOR = Color.GRAY;
+    private static final Color HOVER_COLOR = Color.decode("#C6ECE4");
     private static final Color PRESSED_COLOR = Color.decode("#4B5464");
+    private final SVGUniverse svgUniverse = new SVGUniverse();
 
     public ImageToggleButton(String imgDefaultPath, String imgSelectedPath) {
         try {
-            imageDefault = ImageIO.read(new File(imgDefaultPath));
-            imageSelected = ImageIO.read(new File(imgSelectedPath));
-        } catch (IOException e) {
+            URI uriDefault = svgUniverse.loadSVG(new File(imgDefaultPath).toURI().toURL());
+            URI uriSelected = svgUniverse.loadSVG(new File(imgSelectedPath).toURI().toURL());
+            imageDefault = svgUniverse.getDiagram(uriDefault);
+            imageSelected = svgUniverse.getDiagram(uriSelected);
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -443,22 +501,64 @@ class ImageToggleButton extends JButton {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g;
-        // 开启抗锯齿渲染提示
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        // 设置渲染质量为高质量
         g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-        // 设置图像插值渲染提示为双三次插值，这在图像缩放时可以提供更平滑的结果
         g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-        // Draw the rounded background
         g2d.setColor(getBackground());
         g2d.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), ARC_WIDTH, ARC_HEIGHT));
 
-        // Draw the button image
-        BufferedImage img = getModel().isPressed() || getModel().isRollover() ? imageSelected : imageDefault;
+        SVGDiagram img = getModel().isPressed() || getModel().isRollover() ? imageSelected : imageDefault;
         if (img != null) {
-            int x = (getWidth() - img.getWidth()) / 2;
-            int y = (getHeight() - img.getHeight()) / 2;
-            g2d.drawImage(img, x, y, this);
+            try {
+                img.setIgnoringClipHeuristic(true);
+                img.render(g2d);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
+}
+
+
+class SVGPanel extends JPanel {
+    private SVGDiagram svgDiagram = null;
+
+    public SVGPanel(String svgPath) {
+        setBackground(null); // Set background to null for transparency
+        setOpaque(false); // Make panel transparent
+        try {
+            SVGUniverse svgUniverse = new SVGUniverse();
+            URI uri = svgUniverse.loadSVG(new File(svgPath).toURI().toURL());
+            svgDiagram = svgUniverse.getDiagram(uri);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        if (svgDiagram != null) {
+            Graphics2D g2d = (Graphics2D) g.create();
+            try {
+                svgDiagram.render(g2d);
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                g2d.dispose();
+            }
+        }
+    }
+
+    @Override
+    public Dimension getPreferredSize() {
+        if (svgDiagram != null) {
+            // 确保返回足够大的尺寸以显示整个 SVG 图像
+            return new Dimension(Math.max((int) svgDiagram.getWidth(), 100), Math.max((int) svgDiagram.getHeight(), 100));
+        } else {
+            // SVG 未加载时的默认尺寸
+            return new Dimension(100, 100); // 根据需要调整
+        }
+    }
+
 }

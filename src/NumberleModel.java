@@ -11,10 +11,15 @@ public class NumberleModel {
     public static String targetEquation;
     public List<Character> playerInput = new ArrayList<>();
     protected static int attempts = 0;
-    private static Scanner scanner = new Scanner(System.in); // Static scanner for class-wide access
-    public static ArrayList<String> history = new ArrayList<>();
 
     public static boolean gameIsOver = false;
+    static CharacterFeedback[][] feedbackMatrix = new CharacterFeedback[6][7];
+    private static int currentRow = 0;
+
+    static ArrayList<String> CORRECT = new ArrayList<>();
+    static ArrayList<String> INCORRECT = new ArrayList<>();
+    static ArrayList<String> WRONG_POSITION = new ArrayList<>();
+
 
     public NumberleModel() {
         //初始化incorrectValues，在游戏开始前清空，以处理多次游戏运行的情况
@@ -65,9 +70,6 @@ public class NumberleModel {
         }
         return false;
     }
-    public static boolean isValidInput(char input, List<Character> currentInput) {
-        return VALID_CHARS.contains(input) && currentInput.size() < MAX_LENGTH;
-    }
 
     public static String listToString(List<Character> list) {
         StringBuilder sb = new StringBuilder();
@@ -79,7 +81,6 @@ public class NumberleModel {
 
     public static String compareEquations(String playerEq, String targetEq) {
         StringBuilder feedback = new StringBuilder();
-
         boolean isAllCorrect = true; // 假设玩家输入完全正确
         for (int i = 0; i < playerEq.length(); i++) {
             char pChar = playerEq.charAt(i);
@@ -87,25 +88,36 @@ public class NumberleModel {
 
             if (pChar == tChar) {
                 feedback.append(pChar).append("位置正确内容正确 ");
+                feedbackMatrix[currentRow][i] = CharacterFeedback.CORRECT;
+                if(!CORRECT.contains(String.valueOf(pChar))){
+                    CORRECT.add(String.valueOf(pChar));
+                }
             } else {
                 isAllCorrect = false; // 存在错误
                 if (targetEq.indexOf(pChar) != -1) {
                     feedback.append(pChar).append("内容正确位置错误 ");
+                    feedbackMatrix[currentRow][i] = CharacterFeedback.WRONG_POSITION;
+                    if(!WRONG_POSITION.contains(String.valueOf(pChar))){
+                        WRONG_POSITION.add(String.valueOf(pChar));
+                    }
                 } else {
                     feedback.append(pChar).append("完全错误 ");
+                    feedbackMatrix[currentRow][i] = CharacterFeedback.INCORRECT;
+                    if (!INCORRECT.contains(String.valueOf(pChar))) {
+                        INCORRECT.add(String.valueOf(pChar));
+                    }
                     incorrectValues.add(pChar); // 将完全错误的值添加到Set中
                 }
             }
         }
-
-        System.out.println(feedback.toString()); // 打印对比反馈
+        currentRow++;
+        System.out.println(feedback); // 打印对比反馈
 
         if (!incorrectValues.isEmpty()) {
             System.out.println("完全错误的值：" + incorrectValues.toString());
         } else {
             System.out.println("没有完全错误的值。");
         }
-
         if (isAllCorrect) {
             System.out.println("恭喜你猜对了！游戏胜利。");
             setGameOver(true);
