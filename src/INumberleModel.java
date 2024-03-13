@@ -1,12 +1,22 @@
 import java.util.List;
 
 public interface INumberleModel {
-    public String loadAndSelectEquation(String filePath) throws Exception;
-    public void handleInput(String input, List<Character> playerInput);
-    public boolean isValidInput(char input, List<Character> currentInput);
-    public boolean isValidEquation(String input);
-    public String compareEquations(String input, String targetEq);
-    public void incrementAttempts();
-    public String listToString(List<Character> playerInput);
-    public String arrayToString(String[] array);
+    String loadAndSelectEquation(String filePath) throws Exception;
+    void handleInput(String input, List<Character> playerInput);
+    boolean isHaveOperationSymbol(String playerInput);
+    boolean isHaveEqualSymbol(String playerInput);
+    boolean isFirstInputAndOperator(char input, List<Character> playerInput);
+    boolean isOperator(char input);
+    boolean isConsecutiveOperator(char input, List<Character> playerInput);
+    String listToString(List<Character> list);
+    String compareEquations(String playerEq, String targetEq);
+    void setGameOver(boolean isOver);
+    boolean isValidEquation(String equation);
+    double evaluate(String expression);
+    void incrementAttempts();
+    boolean isGameOver();
+    void attemptSolution(String input);
+    void clearPlayerInput();
+    String arrayToString(String[] arr);
+    void restartGame();
 }

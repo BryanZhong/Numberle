@@ -15,13 +15,13 @@ import java.util.ArrayList;
 
 
 public class NumberleView extends JPanel {
-    NumberleModel model = new NumberleModel();
-    private final int rows = 6;
-    private final int cols = 7;
+    static NumberleModel model = new NumberleModel();
+    private static final int rows = 6;
+    private static final int cols = 7;
     private final float aspectRatio = 1.0f; // 长宽比设定为1:1
     private final float gapRatio = 0.08f; // 间距占矩形宽度的比例
     private final int cornerRadius = 10; // 圆角半径
-    private final String[][] matrix = new String[rows][cols];
+    private static String[][] matrix = new String[rows][cols];
     private int currentRow = 0;
     private int currentCol = 0;
     private boolean isEnterPressed = false;
@@ -29,8 +29,10 @@ public class NumberleView extends JPanel {
     static final Color COLOR_WRONG_POSITION = Color.decode("#F79A6F");
     static final Color COLOR_INCORRECT = Color.decode("#A4AEC4");
     static java.util.List<RoundedButton> buttons = new ArrayList<>();
+    private static JLabel equationLabel;
+    private static JCheckBox showAnswerCheckbox = new JCheckBox("Show Answer", false);
 
-
+    static JFrame frame = new JFrame("Numberle");
     public NumberleView() {
         setBackground(Color.decode("#FBFCFF"));
         // 初始化矩阵为空字符串
@@ -144,7 +146,6 @@ public class NumberleView extends JPanel {
 
 
     public static void main(String[] args) {
-        JFrame frame = new JFrame("Numberle");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout());
         JPanel topPanel = new JPanel(new BorderLayout());
@@ -153,6 +154,13 @@ public class NumberleView extends JPanel {
         NumberleView panel = new NumberleView();
         frame.add(panel, BorderLayout.CENTER);
         panel.setLayout(new BorderLayout()); // 设置布局管理器为 BorderLayout
+// 初始化等式显示标签，但先不显示任何文本
+        equationLabel = new JLabel("");
+        equationLabel.setHorizontalAlignment(JLabel.CENTER);
+        equationLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
+
+        topPanel.add(equationLabel, BorderLayout.NORTH); // 将等式标签添加到顶部面板
+        frame.add(topPanel, BorderLayout.NORTH);
 
         // Replace the existing JLabel for logo with SVGPanel
         SVGPanel logoPanel = new SVGPanel("../Numberle/icon/logo1.svg");
@@ -170,7 +178,7 @@ public class NumberleView extends JPanel {
         ImageToggleButton settingsButton = new ImageToggleButton("../Numberle/icon/setting.svg", "../Numberle/icon/settingSelected.svg");
         buttonPanel.add(settingsButton);
         settingsButton.addActionListener(e -> {
-            showSettingsDialog();
+            showSettingsDialog(panel);
         });
 
         // 将两个面板添加到顶部容器中
@@ -213,7 +221,7 @@ public class NumberleView extends JPanel {
             }
         });
     }
-    public static void showSettingsDialog() {
+    public static void showSettingsDialog(NumberleView view) {
         JDialog settingsDialog = new JDialog();
         settingsDialog.setTitle("Settings");
         settingsDialog.setSize(300, 200); // 设置对话框大小
@@ -230,19 +238,43 @@ public class NumberleView extends JPanel {
             // 弹出一个确认对话框，确认后重新开始游戏
             int result = JOptionPane.showConfirmDialog(settingsDialog, "Are you sure you want to restart the game?", "Restart Game", JOptionPane.YES_NO_OPTION);
             if (result == JOptionPane.YES_OPTION) {
-                System.out.println("Restarting game...");
-                // 重新开始游戏的逻辑
+                for (int i = 0; i < rows; i++) {
+                    for (int j = 0; j < cols; j++) {
+                        matrix[i][j] = "";
+                    }
+                }
+                for (RoundedButton button : buttons) {
+                    button.resetColor();
+                }
+                showAnswerCheckbox.setSelected(false);
+                equationLabel.setText("");
+                view.currentRow = 0;
+                view.currentCol = 0;
+                model.restartGame(); // 重置游戏逻辑
+                settingsDialog.dispose(); // 关闭设置对话框
+                NumberleView.frame.repaint(); // 重新绘制界面
+                view.showLimitDialog("Game Restarted!");
             }
         });
 
         // 添加第二个按钮，例如“展示答案”的复选框
-        JCheckBox showAnswerCheckbox = new JCheckBox("Show Answer", false);
+
         showAnswerCheckbox.setAlignmentX(Component.CENTER_ALIGNMENT); // 设置复选框居中
         settingsDialog.add(showAnswerCheckbox);
 
         settingsDialog.add(Box.createVerticalGlue()); // 再添加一个垂直的弹性空间
 
         settingsDialog.setVisible(true);
+        // 为复选框添加动作监听器
+        showAnswerCheckbox.addActionListener(e -> {
+            if (showAnswerCheckbox.isSelected()) {
+                // 如果复选框被选中，显示等式
+                view.equationLabel.setText("Answer: " + model.targetEquation);
+            } else {
+                // 如果复选框未被选中，隐藏等式
+                view.equationLabel.setText("");
+            }
+        });
     }
 
     private static Font loadFont(String path, float size) {
@@ -441,7 +473,10 @@ class RoundedButton extends JButton {
         setBackground(color);
         colorSetByGame = true;
     }
-
+    public void resetColor() {
+        setBackground(BACKGROUND_COLOR);
+        colorSetByGame = false;
+    }
     @Override
     protected void paintComponent(Graphics g) {
         Graphics2D g2d = (Graphics2D) g;

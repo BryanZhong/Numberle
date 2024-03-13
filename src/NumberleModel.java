@@ -279,4 +279,22 @@ public class NumberleModel {
         }
         return sb.toString();
     }
+    //重新开始游戏
+    public void restartGame() {
+        attempts = 0;
+        gameIsOver = false;
+        incorrectValues.clear();
+        CORRECT.clear();
+        INCORRECT.clear();
+        WRONG_POSITION.clear();
+        feedbackMatrix = new CharacterFeedback[6][7]; // 重置反馈矩阵
+        currentRow = 0; // 重置当前行
+        clearPlayerInput();
+        try {
+            targetEquation = loadAndSelectEquation("equations.txt");
+            System.out.println("新目标等式：" + targetEquation);
+        } catch (Exception e) {
+            System.out.println("重新开始游戏时加载等式失败：" + e.getMessage());
+        }
+    }
 }
