@@ -1,5 +1,6 @@
 import java.util.List;
 
+
 public interface INumberleModel {
     String loadAndSelectEquation(String filePath) throws Exception;
     void handleInput(String input, List<Character> playerInput);
@@ -15,7 +16,6 @@ public interface INumberleModel {
     double evaluate(String expression);
     void incrementAttempts();
     boolean isGameOver();
-    void attemptSolution(String input);
     void clearPlayerInput();
     String arrayToString(String[] arr);
     void restartGame();

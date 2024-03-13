@@ -3,7 +3,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 
-public class NumberleModel {
+public class NumberleModel extends Observable implements INumberleModel{
     public static final int MAX_LENGTH = 7;
     private static final List<Character> VALID_CHARS =
             Arrays.asList('1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '+', '-', '*', '/', '=');
@@ -22,38 +22,55 @@ public class NumberleModel {
 
 
     public NumberleModel() {
+        super();
         //初始化incorrectValues，在游戏开始前清空，以处理多次游戏运行的情况
         incorrectValues.clear();
 
     }
 
+
+
     // 加载并选择等式
-    public static String loadAndSelectEquation(String filePath) throws Exception {
+    @Override
+    public String loadAndSelectEquation(String filePath) throws Exception {
         List<String> equations = Files.readAllLines(Paths.get(filePath));
-        return equations.get(new Random().nextInt(equations.size()));
+        String equation = equations.get(new Random().nextInt(equations.size()));
+
+        // 通知观察者状态已改变
+        setChanged(); // 标记此 Observable对象为已改变的对象
+        notifyObservers(equation); // 通知所有的观察者
+
+        return equation;
     }
     // 处理输入,添加或删除字符,提交等式进行校验
-    public static void handleInput(String input, List<Character> playerInput) {
+
+    @Override
+    public void handleInput(String input, List<Character> playerInput) {
+        boolean stateChanged = false;
         if ("d".equalsIgnoreCase(input) && !playerInput.isEmpty()) {
             playerInput.remove(playerInput.size() - 1);
+            stateChanged = true;
         } else if (input.length() == 1 && VALID_CHARS.contains(input.charAt(0))) {
-            // 检查是否是第一次输入且为运算符
-            if (isFirstInputAndOperator(input.charAt(0), playerInput)) {
+            if (isFirstInputAndOperator(input.charAt(0), playerInput) || isConsecutiveOperator(input.charAt(0), playerInput)) {
+                // 如果是无效输入，不修改状态，因此也不更新观察者
                 System.out.println("无效输入，请确保输入合法字符，第一位输入不能为符号，且符号之间不相连。");
-                // 检查是否存在连续的运算符
-            } else if (isConsecutiveOperator(input.charAt(0), playerInput)) {
-                System.out.println("无效输入，请确保输入合法字符，第一位输入不能为符号，且符号之间不相连。");
-                // 检查是否包含运算符号
             } else {
                 playerInput.add(input.charAt(0));
+                stateChanged = true;
             }
         } else {
-            //NumberleView.displayInvalidInputMessage();
             System.out.println("无效输入，请确保输入合法字符，第一位输入不能为符号，且符号之间不相连。");
         }
+
+        if (stateChanged) {
+            setChanged(); // 标记此 Observable 对象为已改变的对象
+            notifyObservers(); // 通知所有的观察者
+        }
     }
+
     //检查输入的等式是否包含运算符号“+”，“-”，“*”，“/”
-    public static boolean isHaveOperationSymbol(String playerInput) {
+    @Override
+    public boolean isHaveOperationSymbol(String playerInput) {
         List<String> operationSymbols = Arrays.asList("+", "-", "*", "/");
         for (int i = 0; i < playerInput.length(); i++) {
             // Convert each character to String because operationSymbols is a list of String
@@ -65,20 +82,22 @@ public class NumberleModel {
         return false; // No operation symbol found
     }
     //检查输入的等式是否包含等号“=”
-    public static boolean isHaveEqualSymbol(String playerInput) {
+    @Override
+    public boolean isHaveEqualSymbol(String playerInput) {
         return playerInput.contains("=");
     }
-
-    public static boolean isFirstInputAndOperator(char input, List<Character> playerInput) {
+    @Override
+    public boolean isFirstInputAndOperator(char input, List<Character> playerInput) {
         // 检查是否为第一个输入且为运算符
         return playerInput.isEmpty() && isOperator(input);
     }
-    public static boolean isOperator(char input) {
+    @Override
+    public boolean isOperator(char input) {
         // 检查字符是否为运算符
         return input == '+' || input == '-' || input == '*' || input == '/'|| input == '=';
     }
-
-    public static boolean isConsecutiveOperator(char input, List<Character> playerInput) {
+    @Override
+    public boolean isConsecutiveOperator(char input, List<Character> playerInput) {
         // 检查最后一个输入是否为运算符，以及当前输入是否也为运算符
         if (!playerInput.isEmpty() && isOperator(input)) {
             char lastInput = playerInput.get(playerInput.size() - 1);
@@ -86,16 +105,16 @@ public class NumberleModel {
         }
         return false;
     }
-
-    public static String listToString(List<Character> list) {
+    @Override
+    public String listToString(List<Character> list) {
         StringBuilder sb = new StringBuilder();
         for (Character ch : list) {
             sb.append(ch);
         }
         return sb.toString();
     }
-
-    public static String compareEquations(String playerEq, String targetEq) {
+    @Override
+    public String compareEquations(String playerEq, String targetEq) {
         StringBuilder feedback = new StringBuilder();
         boolean isAllCorrect = true; // 假设玩家输入完全正确
         for (int i = 0; i < playerEq.length(); i++) {
@@ -136,42 +155,59 @@ public class NumberleModel {
         }
         if (isAllCorrect) {
             System.out.println("恭喜你猜对了！游戏胜利。");
+            setChanged(); // 标记状态已改变
+            notifyObservers("Win"); // 通知观察者状态改变
             setGameOver(true);
             return "Win";
         }else if(attempts<5) {
             // 在这里打印猜测次数信息
             System.out.println("当前为第 " + (attempts+1) + " 次猜测，你还有 " + (6 - attempts-1) + " 次机会。");
+            setChanged(); // 标记状态已改变
+            notifyObservers("Continue"); // 通知观察者状态改变
             setGameOver(false);
             return "Continue";
         }else {
             System.out.println("很遗憾，你没有在规定次数内猜对。游戏结束。");
+            setChanged(); // 标记状态已改变
+            notifyObservers("Lose"); // 通知观察者状态改变
             setGameOver(true);
             return "Lose";
         }
     }
 
-
-    public static void setGameOver(boolean isOver) {
+    @Override
+    public void setGameOver(boolean isOver) {
         gameIsOver = isOver;
+        setChanged();
+        // 通知所有观察者游戏结束状态，可以传递更详细的信息，比如胜利或失败
+        notifyObservers("GameOver" );
     }
 
     // 解析和计算等式两边的值
-    public static boolean isValidEquation(String equation) {
+    @Override
+    public boolean isValidEquation(String equation) {
         String[] parts = equation.split("=");
         if (parts.length != 2) {
+            setChanged();
+            notifyObservers("InvalidEquation");
             return false; // 等式必须只有一个等号，并且能够分成两部分
         }
         try {
             double leftValue = evaluate(parts[0]);
             double rightValue = evaluate(parts[1]);
+            setChanged();
+            notifyObservers("ValidEquation");
             return Math.abs(leftValue - rightValue) < 0.0001; // 比较两边的值是否相等，考虑到浮点数计算的精度问题
         } catch (Exception e) {
+            setChanged();
+            notifyObservers("InvalidEquation");
             return false; // 如果解析或计算过程中发生错误，则认为等式无效
         }
     }
 
     // 计算表达式的值
-    public static double evaluate(String expression) {
+    @Override
+    public double evaluate(String expression) {
         return new Object() {
             int pos = -1, ch;
 
@@ -236,43 +272,36 @@ public class NumberleModel {
             }
         }.parse();
     }
-
-    public static void incrementAttempts() {
+    @Override
+    public void incrementAttempts() {
         attempts++;
+        // 标记状态已改变
+        setChanged();
+        // 通知观察者尝试次数变化
+        notifyObservers("AttemptIncremented");
         if (attempts >= 6) {
             isGameOver();
+            setChanged();
+            notifyObservers("GameOver");
         }
     }
-    public static boolean isGameOver() {
+    @Override
+    public boolean isGameOver() {
         if (attempts >= 6) {
             System.out.println("很遗憾，你没有在规定次数内猜对。游戏结束。");
+            setChanged();
+            notifyObservers("GameOver");
         }
         return false;
     }
-    public void attemptSolution(String input) {
-        // 处理用户的输入
-        handleInput(input, playerInput);
-
-        // 增加尝试次数
-        incrementAttempts();
-
-        // 检查游戏是否结束
-        if (isGameOver()) {
-            // 如果游戏结束，显示游戏结束信息并退出
-            //NumberleView.displayGameOver(false, targetEquation);
-            if (attempts >= 6) {
-                System.out.println("很遗憾，你没有在规定次数内猜对。游戏结束。");
-                JOptionPane.showMessageDialog(null, "游戏结束，您的分数是：XXX分", "游戏结束", JOptionPane.INFORMATION_MESSAGE);
-            }else {
-                System.out.println("恭喜你猜对了！游戏胜利。");
-            }
-        }
-    }
     public void clearPlayerInput() {
         playerInput.clear();
+        setChanged();
+        notifyObservers("PlayerInputCleared");
     }
     //把二维数组的某一行转换为字符串
-    public static String arrayToString(String[] arr) {
+    @Override
+    public String arrayToString(String[] arr) {
         StringBuilder sb = new StringBuilder();
         for (String ch : arr) {
             sb.append(ch);
@@ -296,5 +325,9 @@ public class NumberleModel {
         } catch (Exception e) {
             System.out.println("重新开始游戏时加载等式失败：" + e.getMessage());
         }
+        // 标记状态已改变
+        setChanged();
+        // 通知所有观察者游戏已重启
+        notifyObservers("GameRestarted");
     }
 }
