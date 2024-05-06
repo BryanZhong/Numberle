@@ -1,5 +1,6 @@
 import com.kitfox.svg.SVGDiagram;
 import com.kitfox.svg.SVGUniverse;
+import java.util.Arrays;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -78,20 +79,20 @@ public class NumberleView extends JPanel implements Observer {
         }
 
         // Load and modify the font directly
-        Font customFont = loadFont("D:/download/Montserrat,Open_Sans/Montserrat/Montserrat-VariableFont_wght.ttf", 28f).deriveFont(Font.BOLD);
+        Font customFont = loadFont("E:\\Download\\Montserrat,Open_Sans\\Montserrat\\Montserrat-VariableFont_wght.ttf", 28f).deriveFont(Font.BOLD);
         g2d.setFont(customFont);
         g2d.setColor(new Color(0x393E4C)); // Set text color
         String[][] matrix_print = new String[rows][cols];
         for (int i = 0; i< matrix.length; i++) {
             for (int j = 0; j< matrix[i].length; j++) {
-               if (matrix[i][j].equals("*")) {
-                   matrix_print[i][j] = "x";
-               } else if (matrix[i][j].equals("/")) {
-                   matrix_print[i][j] = "÷";
-               }
-               else {
-                   matrix_print[i][j] = matrix[i][j];
-               }
+                if (matrix[i][j].equals("*")) {
+                    matrix_print[i][j] = "x";
+                } else if (matrix[i][j].equals("/")) {
+                    matrix_print[i][j] = "÷";
+                }
+                else {
+                    matrix_print[i][j] = matrix[i][j];
+                }
             }
         }
         FontMetrics fm = g2d.getFontMetrics();
@@ -143,19 +144,60 @@ public class NumberleView extends JPanel implements Observer {
 
     @Override
     public void update(Observable o, Object arg) {
-        // 根据模型的变化更新视图
-        if (arg instanceof String) {
-            // 根据 arg 的值做相应处理，例如更新UI组件
-            String command = (String) arg;
-            if ("GameRestarted".equals(command)) {
-                // 重置视图状态
-            } else if ("GameOver".equals(command)) {
-                // 显示游戏结束状态
-            }
-            // 根据需要添加更多的状态处理
+        if (!(arg instanceof String)) return;
+
+        switch ((String) arg) {
+            case "GameRestarted":
+                resetViewForNewGame();
+                break;
+            case "Lose":
+                displayLose();
+                break;
+            case "Win":
+                displayWin();
+                break;
+            case "UpdateUI":
+                repaint();
+                break;
+            default:
+                handleOtherNotifications((String) arg);
+                break;
         }
-        // 可能还需要根据模型状态（而非传递的 arg）更新视图
-        repaint(); // 根据需要重新绘制视图
+    }
+    private void handleOtherNotifications(String arg) {
+        if (arg.startsWith("SetEquation:")) {
+            String equation = arg.substring(12);
+            equationLabel.setText(equation);
+            System.out.println("Equation: " + equation);
+        }
+    }
+
+    private void displayWin() {
+        model.incrementAttempts();
+        RoundedButton.updateButtonColors(buttons, model.CORRECT, model.INCORRECT, model.WRONG_POSITION);
+        showLimitDialog("GameOver!You Win!");
+    }
+    private void displayLose() {
+        model.incrementAttempts();
+        RoundedButton.updateButtonColors(buttons, model.CORRECT, model.INCORRECT, model.WRONG_POSITION);
+        showLimitDialog("GameOver!You Lose!");
+    }
+
+    //reset View For NewGame
+    private void resetViewForNewGame() {
+        // 重置视图状态
+        for (int i = 0; i < rows; i++) {
+            Arrays.fill(matrix[i], "");
+        }
+        for (RoundedButton button : buttons) {
+            button.resetColor();
+        }
+        showAnswerCheckbox.setSelected(false);
+        equationLabel.setText("");
+        currentRow = 0;
+        currentCol = 0;
+        repaint();
+        showLimitDialog("Game Restarted!");
     }
 
     public static void main(String[] args) {
@@ -180,19 +222,19 @@ public class NumberleView extends JPanel implements Observer {
         frame.add(topPanel, BorderLayout.NORTH);
 
         // Replace the existing JLabel for logo with SVGPanel
-        SVGPanel logoPanel = new SVGPanel("../Numberle/icon/logo1.svg");
+        SVGPanel logoPanel = new SVGPanel("Numberle/icon/logo1.svg");
         logoPanel.setOpaque(false); // 如果需要，可以设置为透明
         topPanel.add(logoPanel, BorderLayout.WEST);
 
         // Do the same for the name SVG, if applicable
-        SVGPanel namePanel = new SVGPanel("../Numberle/icon/name.svg");
+        SVGPanel namePanel = new SVGPanel("Numberle/icon/name.svg");
         topPanel.add(namePanel);
 
         // 创建右侧按钮面板，并使用适当的布局
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         buttonPanel.setOpaque(false); // 如果需要，可以设置为透明
         // 假设已经创建了settingsButton
-        ImageToggleButton settingsButton = new ImageToggleButton("../Numberle/icon/setting.svg", "../Numberle/icon/settingSelected.svg");
+        ImageToggleButton settingsButton = new ImageToggleButton("Numberle/icon/setting.svg", "Numberle/icon/settingSelected.svg");
         buttonPanel.add(settingsButton);
         settingsButton.addActionListener(e -> {
             showSettingsDialog(panel);
@@ -257,22 +299,8 @@ public class NumberleView extends JPanel implements Observer {
             // 弹出一个确认对话框，确认后重新开始游戏
             int result = JOptionPane.showConfirmDialog(settingsDialog, "Are you sure you want to restart the game?", "Restart Game", JOptionPane.YES_NO_OPTION);
             if (result == JOptionPane.YES_OPTION) {
-                for (int i = 0; i < rows; i++) {
-                    for (int j = 0; j < cols; j++) {
-                        matrix[i][j] = "";
-                    }
-                }
-                for (RoundedButton button : buttons) {
-                    button.resetColor();
-                }
-                showAnswerCheckbox.setSelected(false);
-                equationLabel.setText("");
-                view.currentRow = 0;
-                view.currentCol = 0;
-                model.restartGame(); // 重置游戏逻辑
-                settingsDialog.dispose(); // 关闭设置对话框
-                NumberleView.frame.repaint(); // 重新绘制界面
-                view.showLimitDialog("Game Restarted!");
+                view.model.restartGame();  // 调用模型的重新开始游戏方法
+                settingsDialog.dispose();  // 关闭设置对话框
             }
         });
 
@@ -387,18 +415,18 @@ public class NumberleView extends JPanel implements Observer {
                         }
 
                     } else {
-                            if ((model.isValidEquation(model.arrayToString(matrix[currentRow]))) == true) {
-                                String result = model.compareEquations(model.arrayToString(matrix[currentRow]), model.targetEquation);
-                                model.incrementAttempts();
-                                isEnterPressed = true; // 标记已经按下 Enter
-                                if(result=="Win"){
-                                    showLimitDialog("GameOver!You Win!");
-                                } else {
-                                        showLimitDialog("GameOver!You Lose!");
-                                }
+                        if ((model.isValidEquation(model.arrayToString(matrix[currentRow]))) == true) {
+                            String result = model.compareEquations(model.arrayToString(matrix[currentRow]), model.targetEquation);
+                            model.incrementAttempts();
+                            isEnterPressed = true; // 标记已经按下 Enter
+                            if(result=="Win"){
+                                showLimitDialog("GameOver!You Win!");
                             } else {
-                                showLimitDialog("Invalid Equation!");
+                                showLimitDialog("GameOver!You Lose!");
                             }
+                        } else {
+                            showLimitDialog("Invalid Equation!");
+                        }
                     }
                 } else {
                     // 如果当前行未满且已有输入，显示输入过短的提示
@@ -439,7 +467,7 @@ public class NumberleView extends JPanel implements Observer {
         dialog.add(panel);
 
         // 使用与按钮相同的字体风格和颜色
-        Font font = loadFont("D:/download/Montserrat,Open_Sans/Montserrat/Montserrat-VariableFont_wght.ttf", 20f).deriveFont(Font.BOLD);
+        Font font = loadFont("E:\\Download\\Montserrat,Open_Sans\\Montserrat\\Montserrat-VariableFont_wght.ttf", 20f).deriveFont(Font.BOLD);
         JLabel label = new JLabel(message, JLabel.CENTER);
         label.setFont(font);
         label.setForeground(new Color(0x393E4C)); // 设置文本颜色
@@ -466,7 +494,7 @@ class RoundedButton extends JButton {
     public RoundedButton(String text) {
         super(text);
         // 更新setFont调用以包含Font.BOLD
-        Font font = loadFont("D:/download/Montserrat,Open_Sans/Montserrat/Montserrat-VariableFont_wght.ttf", 20f).deriveFont(Font.BOLD);
+        Font font = loadFont("E:\\Download\\Montserrat,Open_Sans\\Montserrat\\Montserrat-VariableFont_wght.ttf", 20f).deriveFont(Font.BOLD);
         setFont(font);
         setForeground(FONT_COLOR); // 使用新的字体颜色
         setBackground(BACKGROUND_COLOR);
@@ -555,6 +583,8 @@ class RoundedButton extends JButton {
         return new Dimension(super.getPreferredSize().width, 56);
     }
 }
+
+
 
 
 class ImageToggleButton extends JButton {
