@@ -12,6 +12,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Observer;
 import java.util.Observable;
 
@@ -84,14 +85,14 @@ public class NumberleView extends JPanel implements Observer {
         String[][] matrix_print = new String[rows][cols];
         for (int i = 0; i< matrix.length; i++) {
             for (int j = 0; j< matrix[i].length; j++) {
-               if (matrix[i][j].equals("*")) {
-                   matrix_print[i][j] = "x";
-               } else if (matrix[i][j].equals("/")) {
-                   matrix_print[i][j] = "÷";
-               }
-               else {
-                   matrix_print[i][j] = matrix[i][j];
-               }
+                if (matrix[i][j].equals("*")) {
+                    matrix_print[i][j] = "x";
+                } else if (matrix[i][j].equals("/")) {
+                    matrix_print[i][j] = "÷";
+                }
+                else {
+                    matrix_print[i][j] = matrix[i][j];
+                }
             }
         }
         FontMetrics fm = g2d.getFontMetrics();
@@ -143,19 +144,72 @@ public class NumberleView extends JPanel implements Observer {
 
     @Override
     public void update(Observable o, Object arg) {
-        // 根据模型的变化更新视图
-        if (arg instanceof String) {
-            // 根据 arg 的值做相应处理，例如更新UI组件
-            String command = (String) arg;
-            if ("GameRestarted".equals(command)) {
-                // 重置视图状态
-            } else if ("GameOver".equals(command)) {
-                // 显示游戏结束状态
-            }
-            // 根据需要添加更多的状态处理
+        if (!(arg instanceof String)) return;
+        switch ((String) arg) {
+            case "GameRestarted":
+                resetViewForNewGame();
+                break;
+            case "Lose":
+                displayLose();
+                break;
+            case "Win":
+                displayWin();
+                break;
+            case "Continue":
+                displayContinue();
+                break;
+            case "UpdateUI":
+                repaint();
+                break;
+            default:
+                handleOtherNotifications((String) arg);
+                break;
         }
-        // 可能还需要根据模型状态（而非传递的 arg）更新视图
-        repaint(); // 根据需要重新绘制视图
+    }
+
+
+
+    private void handleOtherNotifications(String arg) {
+        if (arg.startsWith("SetEquation:")) {
+            String equation = arg.substring(12);
+            equationLabel.setText(equation);
+            System.out.println("Equation: " + equation);
+        }
+    }
+
+    private void displayWin() {
+        model.incrementAttempts();
+        RoundedButton.updateButtonColors(buttons, model.CORRECT, model.INCORRECT, model.WRONG_POSITION);
+        showLimitDialog("GameOver!You Win!");
+    }
+    private void displayLose() {
+        RoundedButton.updateButtonColors(buttons, model.CORRECT, model.INCORRECT, model.WRONG_POSITION);
+        model.incrementAttempts();
+        isEnterPressed = true; // 标记已经按下 Enter
+        showLimitDialog("GameOver!You Lose!");
+    }
+    private void displayContinue() {
+        model.incrementAttempts();
+        RoundedButton.updateButtonColors(buttons, model.CORRECT, model.INCORRECT, model.WRONG_POSITION);
+        showLimitDialog("You have " + (6 - model.attempts) + " chances left.");
+        currentRow++;
+        currentCol = 0;
+    }
+    //reset View For NewGame
+    private void resetViewForNewGame() {
+        // 重置视图状态
+        for (int i = 0; i < rows; i++) {
+            Arrays.fill(matrix[i], "");
+        }
+        for (RoundedButton button : buttons) {
+            button.resetColor();
+        }
+        showAnswerCheckbox.setSelected(false);
+        equationLabel.setText("");
+        currentRow = 0;
+        currentCol = 0;
+        repaint();
+        showLimitDialog("Game Restarted!");
     }
 
     public static void main(String[] args) {
@@ -168,16 +222,16 @@ public class NumberleView extends JPanel implements Observer {
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.setBackground(Color.decode("#FBFCFF"));
         frame.add(topPanel, BorderLayout.NORTH);
-        NumberleView panel = new NumberleView();
-        frame.add(panel, BorderLayout.CENTER);
-        panel.setLayout(new BorderLayout()); // 设置布局管理器为 BorderLayout
+
+        // 使用当前的实例添加到frame，而不是创建新的实例
+        frame.add(this, BorderLayout.CENTER);
+        this.setLayout(new BorderLayout());
+
         // 初始化等式显示标签，但先不显示任何文本
         equationLabel = new JLabel("");
         equationLabel.setHorizontalAlignment(JLabel.CENTER);
         equationLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
-
-        topPanel.add(equationLabel, BorderLayout.NORTH); // 将等式标签添加到顶部面板
-        frame.add(topPanel, BorderLayout.NORTH);
+        topPanel.add(equationLabel, BorderLayout.NORTH);
 
         // Replace the existing JLabel for logo with SVGPanel
         SVGPanel logoPanel = new SVGPanel("../Numberle/icon/logo1.svg");
@@ -195,7 +249,7 @@ public class NumberleView extends JPanel implements Observer {
         ImageToggleButton settingsButton = new ImageToggleButton("../Numberle/icon/setting.svg", "../Numberle/icon/settingSelected.svg");
         buttonPanel.add(settingsButton);
         settingsButton.addActionListener(e -> {
-            showSettingsDialog(panel);
+            showSettingsDialog(this);
         });
 
         // 将两个面板添加到顶部容器中
@@ -215,16 +269,16 @@ public class NumberleView extends JPanel implements Observer {
         buttonsPanel.add(operatorButtonsPanel);
 
         for (int i = 1; i <= 9; i++) {
-            addButton(numberButtonsPanel, String.valueOf(i), 56, 56, panel.createActionListener(String.valueOf(i)));
+            addButton(numberButtonsPanel, String.valueOf(i), 56, 56, createActionListener(String.valueOf(i)));
         }
-        addButton(numberButtonsPanel, "0", 56, 56, panel.createActionListener("0"));
+        addButton(numberButtonsPanel, "0", 56, 56, createActionListener("0"));
 
-        addButton(operatorButtonsPanel, "Delete", 117, 56, panel.createActionListener("Delete"));
+        addButton(operatorButtonsPanel, "Delete", 117, 56, createActionListener("Delete"));
         String[] operators = {"+", "-", "×", "÷", "="};
         for (String operator : operators) {
-            addButton(operatorButtonsPanel, operator, 63, 56, panel.createActionListener(operator)); // 使用您指定的运算符按钮大小
+            addButton(operatorButtonsPanel, operator, 63, 56, createActionListener(operator));
         }
-        addButton(operatorButtonsPanel, "Enter", 117, 56, panel.createActionListener("Enter"));
+        addButton(operatorButtonsPanel, "Enter", 117, 56, createActionListener("Enter"));
 
         frame.setSize(800, 600);
         frame.setLocationRelativeTo(null); // 居中显示窗口
@@ -234,10 +288,11 @@ public class NumberleView extends JPanel implements Observer {
         frame.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
-                panel.repaint();
+                repaint();
             }
         });
     }
+
     public static void showSettingsDialog(NumberleView view) {
         JDialog settingsDialog = new JDialog();
         settingsDialog.setTitle("Settings");
@@ -255,28 +310,14 @@ public class NumberleView extends JPanel implements Observer {
         restartButton.setEnabled(view.model.attempts != 0);
         restartButton.addActionListener(e -> {
             // 弹出一个确认对话框，确认后重新开始游戏
+            UIManager.put("OptionPane.yesButtonText", "Yes");
+            UIManager.put("OptionPane.noButtonText", "No");
             int result = JOptionPane.showConfirmDialog(settingsDialog, "Are you sure you want to restart the game?", "Restart Game", JOptionPane.YES_NO_OPTION);
             if (result == JOptionPane.YES_OPTION) {
-                for (int i = 0; i < rows; i++) {
-                    for (int j = 0; j < cols; j++) {
-                        matrix[i][j] = "";
-                    }
-                }
-                for (RoundedButton button : buttons) {
-                    button.resetColor();
-                }
-                showAnswerCheckbox.setSelected(false);
-                equationLabel.setText("");
-                view.currentRow = 0;
-                view.currentCol = 0;
-                model.restartGame(); // 重置游戏逻辑
-                settingsDialog.dispose(); // 关闭设置对话框
-                NumberleView.frame.repaint(); // 重新绘制界面
-                view.showLimitDialog("Game Restarted!");
+                view.model.restartGame();  // 调用模型的重新开始游戏方法
+                settingsDialog.dispose();  // 关闭设置对话框
             }
         });
-
-        // 添加第二个按钮，例如“展示答案”的复选框
 
         showAnswerCheckbox.setAlignmentX(Component.CENTER_ALIGNMENT); // 设置复选框居中
         settingsDialog.add(showAnswerCheckbox);
@@ -300,7 +341,7 @@ public class NumberleView extends JPanel implements Observer {
             if (chooseEquationCheckbox.isSelected()) {
                 // 如果复选框被选中，显示等式
                 try {
-                    model.targetEquation = model.loadAndSelectEquation("equations.txt");
+                    model.targetEquation = model.loadAndSelectEquation("../Numberle/equations.txt");
                     System.out.println("新目标等式：" + model.targetEquation);
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
@@ -366,39 +407,18 @@ public class NumberleView extends JPanel implements Observer {
                             return; // 直接返回，不提交等式
                         }
                         if ((model.isValidEquation(model.arrayToString(matrix[currentRow]))) == true) {
-                            String result=model.compareEquations(model.arrayToString(matrix[currentRow]), model.targetEquation);
-                            if (result=="Win") {
-                                model.incrementAttempts();
-                                RoundedButton.updateButtonColors(buttons, model.CORRECT, model.INCORRECT, model.WRONG_POSITION);
-                                showLimitDialog("GameOver!You Win!");
-                            } else if (result=="Continue") {
-                                model.incrementAttempts();
-                                RoundedButton.updateButtonColors(buttons, model.CORRECT, model.INCORRECT, model.WRONG_POSITION);
-                                showLimitDialog("You have " + (6 - model.attempts) + " chances left.");
-                                currentRow++;
-                                currentCol = 0;
-                            } else {
-                                RoundedButton.updateButtonColors(buttons, model.CORRECT, model.INCORRECT, model.WRONG_POSITION);
-                                model.incrementAttempts();
-                                isEnterPressed = true; // 标记已经按下 Enter
-                            }
+                            model.compareEquations(model.arrayToString(matrix[currentRow]), model.targetEquation);
                         } else {
                             showLimitDialog("Invalid Equation!");
                         }
-
                     } else {
-                            if ((model.isValidEquation(model.arrayToString(matrix[currentRow]))) == true) {
-                                String result = model.compareEquations(model.arrayToString(matrix[currentRow]), model.targetEquation);
-                                model.incrementAttempts();
-                                isEnterPressed = true; // 标记已经按下 Enter
-                                if(result=="Win"){
-                                    showLimitDialog("GameOver!You Win!");
-                                } else {
-                                        showLimitDialog("GameOver!You Lose!");
-                                }
-                            } else {
-                                showLimitDialog("Invalid Equation!");
-                            }
+                        if ((model.isValidEquation(model.arrayToString(matrix[currentRow]))) == true) {
+                            model.compareEquations(model.arrayToString(matrix[currentRow]), model.targetEquation);
+                            model.incrementAttempts();
+                            isEnterPressed = true; // 标记已经按下 Enter
+                        } else {
+                            showLimitDialog("Invalid Equation!");
+                        }
                     }
                 } else {
                     // 如果当前行未满且已有输入，显示输入过短的提示
@@ -450,8 +470,6 @@ public class NumberleView extends JPanel implements Observer {
 
         dialog.setVisible(true);
     }
-
-
 }
 
 
@@ -526,6 +544,11 @@ class RoundedButton extends JButton {
         // 遍历所有按钮，根据它们的标签更新背景颜色
         for (RoundedButton button : buttons) {
             String buttonText = button.getText();
+            if ("×".equals(buttonText)) {
+                buttonText = "*";
+            } else if ("÷".equals(buttonText)) {
+                buttonText = "/";
+            }
             if (CORRECT.contains(buttonText)) {
                 button.setColorByGame(NumberleView.COLOR_CORRECT);
             } else if (WRONG_POSITION.contains(buttonText)) {

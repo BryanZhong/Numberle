@@ -13,8 +13,12 @@ public class NumberleModel extends Observable implements INumberleModel{
     protected static int attempts = 0;
 
     public static boolean gameIsOver = false;
+    static final int rows = 6;
+    static final int cols = 7;
+    static String[][] matrix = new String[rows][cols];
     static CharacterFeedback[][] feedbackMatrix = new CharacterFeedback[6][7];
-    private static int currentRow = 0;
+    static int currentRow = 0;
+    static int currentCol = 0;
 
     static ArrayList<String> CORRECT = new ArrayList<>();
     static ArrayList<String> INCORRECT = new ArrayList<>();
@@ -25,7 +29,14 @@ public class NumberleModel extends Observable implements INumberleModel{
         super();
         //初始化incorrectValues，在游戏开始前清空，以处理多次游戏运行的情况
         incorrectValues.clear();
-
+        attempts = 0;
+        gameIsOver = false;
+        CORRECT.clear();
+        INCORRECT.clear();
+        WRONG_POSITION.clear();
+        feedbackMatrix = new CharacterFeedback[6][7]; // 重置反馈矩阵
+        currentRow = 0; // 重置当前行
+        clearPlayerInput();
     }
 
 
@@ -330,4 +341,9 @@ public class NumberleModel extends Observable implements INumberleModel{
         // 通知所有观察者游戏已重启
         notifyObservers("GameRestarted");
     }
+    //设置1+1+1=3为默认等式
+    public void setDefaultEquation(){
+        targetEquation = "1+1+1=3";
+    }
+
 }
