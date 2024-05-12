@@ -17,37 +17,52 @@ import java.util.Observer;
 import java.util.Observable;
 
 public class NumberleView extends JPanel implements Observer {
-    static NumberleModel model = new NumberleModel();
-    private static final int rows = 6;
-    private static final int cols = 7;
+    private static NumberleModel model = new NumberleModel();
+    private static NumberleController controller= new NumberleController(model);
     private final float aspectRatio = 1.0f; // 长宽比设定为1:1
     private final float gapRatio = 0.08f; // 间距占矩形宽度的比例
     private final int cornerRadius = 10; // 圆角半径
-    private static String[][] matrix = new String[rows][cols];
-    private int currentRow = 0;
-    private int currentCol = 0;
+    private int currentRow = controller.getCurrentRow();
+    private int currentCol = controller.getCurrentCol();
     private boolean isEnterPressed = false;
     static final Color COLOR_CORRECT = Color.decode("#1BB295");
     static final Color COLOR_WRONG_POSITION = Color.decode("#F79A6F");
     static final Color COLOR_INCORRECT = Color.decode("#A4AEC4");
     static java.util.List<RoundedButton> buttons = new ArrayList<>();
     private static JLabel equationLabel;
-    private static JCheckBox showAnswerCheckbox = new JCheckBox("Show Answer", false);
-    private static JCheckBox chooseEquationCheckbox = new JCheckBox("Choose Equation", false);
-
+    private static JCheckBox showAnswerCheckbox = new JCheckBox("Show Answer", controller.getShowEquationFlag());
+    private static JCheckBox chooseEquationCheckbox = new JCheckBox("Choose Equation", controller.getRandomEquationFlag());
+    private static String[][] matrix = controller.getMatrix();
     static JFrame frame = new JFrame("Numberle");
-    public NumberleView() {
+
+    public NumberleView(NumberleController controller) {
         setBackground(Color.decode("#FBFCFF"));
-        model.addObserver(this);
+        if (controller.model != null) {
+            controller.model.addObserver(this);
+        } else {
+            throw new IllegalStateException("Model has not been initialized");
+        }
         // 初始化矩阵为空字符串
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
+        for (int i = 0; i < controller.getRows(); i++) {
+            for (int j = 0; j < controller.getCols(); j++) {
                 matrix[i][j] = "";
             }
         }
-        model.targetEquation = "1+1+1=3";
+        controller.setTargetEquation("1+1+1=3");
     }
 
+    /**
+     * Custom paint component for rendering the game grid.
+     * This method handles the painting of game elements on the panel.
+     * It uses anti-aliasing to smooth out the edges of shapes.
+     *
+     * The method calculates dimensions dynamically based on the panel size,
+     * accounting for the number of rows and columns in the game.
+     * It renders each cell with a rounded rectangle and paints the characters
+     * entered by the user, applying color coding based on their correctness.
+     *
+     * @param g The {@link Graphics} context used for drawing on this panel.
+     */
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -56,22 +71,22 @@ public class NumberleView extends JPanel implements Observer {
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         int panelWidth = getWidth();
-        int availableWidth = (int) (panelWidth - (cols - 1) * gapRatio * panelWidth);
-        int rectWidth = (int) ((availableWidth / cols) / (1 + gapRatio));
+        int availableWidth = (int) (panelWidth - (controller.getRows() - 1) * gapRatio * panelWidth);
+        int rectWidth = (int) ((availableWidth / controller.getCols()) / (1 + gapRatio));
         int rectHeight = (int) (rectWidth * aspectRatio);
         int gap = (int) (rectWidth * gapRatio);
 
-        int totalHeight = rows * rectHeight + (rows - 1) * gap;
+        int totalHeight = controller.getRows() * rectHeight + (controller.getRows() - 1) * gap;
         int startY = 0;
 
-        int totalWidth = cols * rectWidth + (cols - 1) * gap;
+        int totalWidth = controller.getCols() * rectWidth + (controller.getCols() - 1) * gap;
         int startX = (panelWidth - totalWidth) / 2;
 
         Color originalColor = g2d.getColor();
         g2d.setColor(Color.decode("#B1B1B1"));
 
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
+        for (int i = 0; i < controller.getRows(); i++) {
+            for (int j = 0; j < controller.getCols(); j++) {
                 int x = startX + j * (rectWidth + gap);
                 int y = startY + i * (rectHeight + gap);
                 g2d.drawRoundRect(x, y, rectWidth, rectHeight, cornerRadius, cornerRadius);
@@ -82,7 +97,7 @@ public class NumberleView extends JPanel implements Observer {
         Font customFont = loadFont("D:/download/Montserrat,Open_Sans/Montserrat/Montserrat-VariableFont_wght.ttf", 28f).deriveFont(Font.BOLD);
         g2d.setFont(customFont);
         g2d.setColor(new Color(0x393E4C)); // Set text color
-        String[][] matrix_print = new String[rows][cols];
+        String[][] matrix_print = new String[controller.getRows()][controller.getCols()];
         for (int i = 0; i< matrix.length; i++) {
             for (int j = 0; j< matrix[i].length; j++) {
                 if (matrix[i][j].equals("*")) {
@@ -96,18 +111,19 @@ public class NumberleView extends JPanel implements Observer {
             }
         }
         FontMetrics fm = g2d.getFontMetrics();
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
+        for (int i = 0; i < controller.getRows(); i++) {
+            for (int j = 0; j < controller.getCols(); j++) {
                 int x = startX + j * (rectWidth + gap);
                 int y = startY + i * (rectHeight + gap);
 
                 // 根据 feedbackMatrix 中的状态选择背景色
                 Color backgroundColor = Color.decode("#FBFCFF"); // 默认背景色
-                if (model.feedbackMatrix[i][j] == CharacterFeedback.CORRECT) {
+                CharacterFeedback[][] feedback = controller.getFeedback();
+                if (feedback[i][j] == CharacterFeedback.CORRECT) {
                     backgroundColor = Color.decode("#1BB295");
-                } else if (model.feedbackMatrix[i][j] == CharacterFeedback.WRONG_POSITION) {
+                } else if (feedback[i][j] == CharacterFeedback.WRONG_POSITION) {
                     backgroundColor = Color.decode("#F79A6F");
-                } else if (model.feedbackMatrix[i][j] == CharacterFeedback.INCORRECT) {
+                } else if (feedback[i][j] == CharacterFeedback.INCORRECT) {
                     backgroundColor = Color.decode("#A4AEC4");
                 }
                 g2d.setColor(backgroundColor);
@@ -117,8 +133,8 @@ public class NumberleView extends JPanel implements Observer {
 
         // 绘制边框
         g2d.setColor(Color.decode("#B1B1B1"));
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
+        for (int i = 0; i < controller.getRows(); i++) {
+            for (int j = 0; j < controller.getCols(); j++) {
                 int x = startX + j * (rectWidth + gap);
                 int y = startY + i * (rectHeight + gap);
                 g2d.drawRoundRect(x, y, rectWidth, rectHeight, cornerRadius, cornerRadius);
@@ -127,8 +143,8 @@ public class NumberleView extends JPanel implements Observer {
 
         // 绘制文字
         g2d.setColor(Color.decode("#393E4C")); // 文字颜色
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
+        for (int i = 0; i < controller.getRows(); i++) {
+            for (int j = 0; j < controller.getCols(); j++) {
                 if (!matrix[i][j].isEmpty()) {
                     String text = matrix[i][j].replace("*", "x").replace("/", "÷");
                     int textWidth = fm.stringWidth(text);
@@ -141,7 +157,12 @@ public class NumberleView extends JPanel implements Observer {
 
         g2d.setColor(originalColor);
     }
-
+    /**
+     * Responds to updates from the observed object. This method is called whenever the observed object is changed.
+     *
+     * @param o   the observable object.
+     * @param arg an argument passed to the {@code notifyObservers} method.
+     */
     @Override
     public void update(Observable o, Object arg) {
         if (!(arg instanceof String)) return;
@@ -158,53 +179,45 @@ public class NumberleView extends JPanel implements Observer {
             case "Continue":
                 displayContinue();
                 break;
-            case "UpdateUI":
-                repaint();
-                break;
-            default:
-                handleOtherNotifications((String) arg);
-                break;
         }
     }
 
-
-
-    private void handleOtherNotifications(String arg) {
-        if (arg.startsWith("SetEquation:")) {
-            String equation = arg.substring(12);
-            equationLabel.setText(equation);
-            System.out.println("Equation: " + equation);
-        }
-    }
-
+    /**
+     * Displays a win message and updates the UI components to reflect the win state.
+     */
     private void displayWin() {
-        model.incrementAttempts();
-        RoundedButton.updateButtonColors(buttons, model.CORRECT, model.INCORRECT, model.WRONG_POSITION);
+        RoundedButton.updateButtonColors(buttons, controller.getCORRECT(), controller.getINCORRECT(), controller.getWRONG_POSITION());
         showLimitDialog("GameOver!You Win!");
     }
+    /**
+     * Displays a lose message and updates the UI components to reflect the lose state.
+     */
     private void displayLose() {
-        RoundedButton.updateButtonColors(buttons, model.CORRECT, model.INCORRECT, model.WRONG_POSITION);
-        model.incrementAttempts();
+        RoundedButton.updateButtonColors(buttons, controller.getCORRECT(), controller.getINCORRECT(), controller.getWRONG_POSITION());
         isEnterPressed = true; // 标记已经按下 Enter
         showLimitDialog("GameOver!You Lose!");
     }
+    /**
+     * Displays a continue message indicating the remaining chances and updates the UI to prepare for the next attempt.
+     */
     private void displayContinue() {
-        model.incrementAttempts();
-        RoundedButton.updateButtonColors(buttons, model.CORRECT, model.INCORRECT, model.WRONG_POSITION);
-        showLimitDialog("You have " + (6 - model.attempts) + " chances left.");
+        RoundedButton.updateButtonColors(buttons, controller.getCORRECT(), controller.getINCORRECT(), controller.getWRONG_POSITION());
+        showLimitDialog("You have " + (6 - controller.model.attempts-1) + " chances left.");
         currentRow++;
         currentCol = 0;
     }
-    //reset View For NewGame
+    /**
+     * Resets the view for a new game by clearing the game matrix, resetting UI components, and repainting the view.
+     */
     private void resetViewForNewGame() {
         // 重置视图状态
-        for (int i = 0; i < rows; i++) {
+        for (int i = 0; i < controller.getRows(); i++) {
             Arrays.fill(matrix[i], "");
         }
         for (RoundedButton button : buttons) {
             button.resetColor();
         }
-        showAnswerCheckbox.setSelected(false);
+        showAnswerCheckbox.setSelected(controller.getShowEquationFlag());
         equationLabel.setText("");
         currentRow = 0;
         currentCol = 0;
@@ -213,9 +226,13 @@ public class NumberleView extends JPanel implements Observer {
     }
 
     public static void main(String[] args) {
-        NumberleView view=new NumberleView();
+        NumberleView view=new NumberleView(controller);
         view.initGUI();
     }
+    /**
+     * Initializes the main GUI of the application.
+     * Sets up the layout, buttons, and other UI elements.
+     */
     public void initGUI() {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout());
@@ -280,7 +297,7 @@ public class NumberleView extends JPanel implements Observer {
         }
         addButton(operatorButtonsPanel, "Enter", 117, 56, createActionListener("Enter"));
 
-        frame.setSize(800, 600);
+        frame.setSize(800, 700);
         frame.setLocationRelativeTo(null); // 居中显示窗口
         frame.setVisible(true);
 
@@ -292,8 +309,12 @@ public class NumberleView extends JPanel implements Observer {
             }
         });
     }
-
-    public static void showSettingsDialog(NumberleView view) {
+    /**
+     * Shows the settings dialog for game configuration.
+     *
+     * @param view The current view context from which the dialog is called.
+     */
+    public void showSettingsDialog(NumberleView view) {
         JDialog settingsDialog = new JDialog();
         settingsDialog.setTitle("Settings");
         settingsDialog.setSize(300, 200); // 设置对话框大小
@@ -307,53 +328,134 @@ public class NumberleView extends JPanel implements Observer {
         restartButton.setAlignmentX(Component.CENTER_ALIGNMENT); // 设置按钮居中
         settingsDialog.add(restartButton);
         // 根据model.attempts的值禁用或启用重新开始按钮
-        restartButton.setEnabled(view.model.attempts != 0);
+        restartButton.setEnabled(controller.model.attempts != 0);
         restartButton.addActionListener(e -> {
             // 弹出一个确认对话框，确认后重新开始游戏
             UIManager.put("OptionPane.yesButtonText", "Yes");
             UIManager.put("OptionPane.noButtonText", "No");
             int result = JOptionPane.showConfirmDialog(settingsDialog, "Are you sure you want to restart the game?", "Restart Game", JOptionPane.YES_NO_OPTION);
             if (result == JOptionPane.YES_OPTION) {
-                view.model.restartGame();  // 调用模型的重新开始游戏方法
+                controller.restartGame();  // 调用模型的重新开始游戏方法
                 settingsDialog.dispose();  // 关闭设置对话框
             }
         });
 
         showAnswerCheckbox.setAlignmentX(Component.CENTER_ALIGNMENT); // 设置复选框居中
         settingsDialog.add(showAnswerCheckbox);
-
-        settingsDialog.add(Box.createVerticalGlue()); // 再添加一个垂直的弹性空间
-
-        settingsDialog.setVisible(true);
         // 为复选框添加动作监听器
         showAnswerCheckbox.addActionListener(e -> {
             if (showAnswerCheckbox.isSelected()) {
                 // 如果复选框被选中，显示等式
-                view.equationLabel.setText("Answer: " + model.targetEquation);
+                controller.setShowEquationFlag(true);
+                equationLabel.setText("Answer: " + controller.getTargetEquation());
+                settingsDialog.dispose();
             } else {
                 // 如果复选框未被选中，隐藏等式
-                view.equationLabel.setText("");
+                controller.setShowEquationFlag(false);
+                equationLabel.setText("");
+                settingsDialog.dispose();
+            }
+        });
+        JCheckBox chooseShowError = new JCheckBox("Show Error Messages", controller.getShowErrorMessageFlag());
+        chooseShowError.setAlignmentX(Component.CENTER_ALIGNMENT);
+        settingsDialog.add(chooseShowError);
+        chooseShowError.setSelected(controller.getShowErrorMessageFlag());
+        chooseShowError.addActionListener(e -> {
+            boolean selected = chooseShowError.isSelected();
+            controller.setShowErrorMessageFlag(selected);
+            if (selected) {
+                controller.setShowErrorMessageFlag(true);
+                System.out.println("Error messages will be shown.");
+                settingsDialog.dispose();
+            } else {
+                controller.setShowErrorMessageFlag(false);
+                System.out.println("Error messages will not be shown.");
+                settingsDialog.dispose();
             }
         });
         chooseEquationCheckbox.setAlignmentX(Component.CENTER_ALIGNMENT);
         settingsDialog.add(chooseEquationCheckbox);
         chooseEquationCheckbox.addActionListener(e -> {
             if (chooseEquationCheckbox.isSelected()) {
-                // 如果复选框被选中，显示等式
-                try {
-                    model.targetEquation = model.loadAndSelectEquation("../Numberle/equations.txt");
-                    System.out.println("新目标等式：" + model.targetEquation);
-                } catch (Exception ex) {
-                    throw new RuntimeException(ex);
-                }
+                controller.restartGame();
+                controller.setRandomEquationFlag(true);
+                controller.setShowErrorMessageFlag(false);
+                controller.setShowEquationFlag(false);
+                chooseShowError.setSelected(controller.getShowErrorMessageFlag());
+                showAnswerCheckbox.setSelected(controller.getShowEquationFlag());
+                settingsDialog.dispose();
             } else {
-                // 如果复选框未被选中，隐藏等式
-                model.targetEquation = "1+1+1=3";
-                System.out.println("默认等式：" + model.targetEquation);
+                controller.restartGame();
+                controller.setRandomEquationFlag(false);
+                controller.setShowErrorMessageFlag(false);
+                controller.setShowEquationFlag(false);
+                chooseShowError.setSelected(controller.getShowErrorMessageFlag());
+                showAnswerCheckbox.setSelected(controller.getShowEquationFlag());
+                settingsDialog.dispose();
             }
         });
-    }
 
+        settingsDialog.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosed(WindowEvent e) {
+                // 移除监听器
+                removeListeners(settingsDialog);
+            }
+        });
+
+        settingsDialog.setVisible(true);
+        settingsDialog.add(Box.createVerticalGlue()); // 再添加一个垂直的弹性空间
+    }
+    /**
+     * Removes action listeners from the specified dialog.
+     *
+     * @param dialog The dialog from which to remove action listeners.
+     */
+    private void removeListeners(JDialog dialog) {
+        // 移除showAnswerCheckbox的监听器
+        for (ActionListener al : showAnswerCheckbox.getActionListeners()) {
+            showAnswerCheckbox.removeActionListener(al);
+        }
+
+        // 移除chooseEquationCheckbox的监听器
+        for (ActionListener al : chooseEquationCheckbox.getActionListeners()) {
+            chooseEquationCheckbox.removeActionListener(al);
+        }
+
+        // 移除chooseShowError的监听器（如果已添加到对话框）
+        JCheckBox chooseShowError = findChooseShowErrorCheckBox(dialog);
+        if (chooseShowError != null) {
+            for (ActionListener al : chooseShowError.getActionListeners()) {
+                chooseShowError.removeActionListener(al);
+            }
+        }
+    }
+    /**
+     * Finds the "Show Error Messages" checkbox in the specified container.
+     *
+     * @param container The container to search for the checkbox.
+     * @return The "Show Error Messages" checkbox if found, or {@code null} if not found.
+     */
+    private JCheckBox findChooseShowErrorCheckBox(Container container) {
+        for (Component comp : container.getComponents()) {
+            if (comp instanceof JCheckBox && ((JCheckBox)comp).getText().equals("Show Error Messages")) {
+                return (JCheckBox) comp;
+            } else if (comp instanceof Container) {
+                JCheckBox checkBox = findChooseShowErrorCheckBox((Container) comp);
+                if (checkBox != null) {
+                    return checkBox;
+                }
+            }
+        }
+        return null;
+    }
+    /**
+     * Loads a font from the specified file path and size.
+     *
+     * @param path The file path of the font to load.
+     * @param size The size of the font to create.
+     * @return The loaded font, or a default font if the file cannot be loaded.
+     */
     private static Font loadFont(String path, float size) {
         try {
             Font font = Font.createFont(Font.TRUETYPE_FONT, new File(path)).deriveFont(size);
@@ -364,7 +466,15 @@ public class NumberleView extends JPanel implements Observer {
             return new JButton().getFont();
         }
     }
-
+    /**
+     * Adds a button to the specified panel with the given label, width, height, and action listener.
+     *
+     * @param panel           The panel to which the button will be added.
+     * @param label           The label text of the button.
+     * @param width           The width of the button.
+     * @param height          The height of the button.
+     * @param actionListener  The action listener to be added to the button.
+     */
     private static void addButton(JPanel panel, String label, int width, int height, ActionListener actionListener) {
         RoundedButton button = new RoundedButton(label);
         button.setPreferredSize(new Dimension(width, height));
@@ -372,10 +482,15 @@ public class NumberleView extends JPanel implements Observer {
         panel.add(button);
         buttons.add(button);
     }
-
+    /**
+     * Creates an action listener for the specified label.
+     *
+     * @param label The label text for the action listener.
+     * @return The action listener for the specified label.
+     */
     private ActionListener createActionListener(String label) {
         return e -> {
-            if (NumberleModel.gameIsOver) {
+            if (controller.isGameOver()==true) {
                 return; // 直接返回，不执行任何操作
             }
             String transformedLabel = label;
@@ -387,6 +502,7 @@ public class NumberleView extends JPanel implements Observer {
             }
             if ("Delete".equals(transformedLabel)) {
                 if (currentCol > 0) {
+                    matrix =controller.getMatrix();
                     matrix[currentRow][--currentCol] = ""; // 删除当前行的最后一个字符
                     isEnterPressed = false; // 重置 Enter 标志
                 } else if (currentRow > 0 && !isEnterPressed) {
@@ -394,49 +510,71 @@ public class NumberleView extends JPanel implements Observer {
                     showLimitDialog("Cannot delete previous row!");
                 }
             } else if ("Enter".equals(transformedLabel)) {
-                if (currentCol == cols) { // 如果当前行已满
-                    if (currentRow < rows - 1) { // 并且不是最后一行
-                        if (!model.isHaveOperationSymbol(model.arrayToString(matrix[currentRow]))) {
+                if (currentCol == controller.getCols()) { // 如果当前行已满
+                    if (currentRow < controller.getRows() - 1) { // 并且不是最后一行
+                        if (!controller.isHaveOperationSymbol(controller.arrayToString(matrix[currentRow]))) {
                             // 如果不包含运算符，显示错误提示并让用户修改输入
-                            showLimitDialog("Missing Operator!");
+                            if(controller.getShowErrorMessageFlag()){
+                                showLimitDialog(controller.getErrorMassage());
+                                controller.setErrorMessage("");
+                            }
                             return; // 直接返回，不提交等式
                         }
-                        if (!model.isHaveEqualSymbol(model.arrayToString(matrix[currentRow]))) {
+                        if (!controller.isHaveEqualSymbol(controller.arrayToString(matrix[currentRow]))) {
                             // 如果不包含等号，显示错误提示并让用户修改输入
-                            showLimitDialog("No Equal\'=\' Sign!");
+                            if(controller.getShowErrorMessageFlag()){
+                                showLimitDialog(controller.getErrorMassage());
+                                controller.setErrorMessage("");
+                            }
                             return; // 直接返回，不提交等式
                         }
-                        if ((model.isValidEquation(model.arrayToString(matrix[currentRow]))) == true) {
-                            model.compareEquations(model.arrayToString(matrix[currentRow]), model.targetEquation);
+                        if ((controller.isValidEquation(controller.arrayToString(matrix[currentRow]))) == true) {
+                            controller.compareEquations(controller.arrayToString(matrix[currentRow]), controller.getTargetEquation());
                         } else {
-                            showLimitDialog("Invalid Equation!");
+                            if(controller.getShowErrorMessageFlag()){
+                                showLimitDialog(controller.getErrorMassage());
+                                controller.setErrorMessage("");
+                            }
                         }
                     } else {
-                        if ((model.isValidEquation(model.arrayToString(matrix[currentRow]))) == true) {
-                            model.compareEquations(model.arrayToString(matrix[currentRow]), model.targetEquation);
-                            model.incrementAttempts();
+                        if ((controller.isValidEquation(controller.arrayToString(matrix[currentRow]))) == true) {
+                            controller.compareEquations(controller.arrayToString(matrix[currentRow]), controller.getTargetEquation());
+                            controller.incrementAttempts();
                             isEnterPressed = true; // 标记已经按下 Enter
                         } else {
-                            showLimitDialog("Invalid Equation!");
+                            if(controller.getShowErrorMessageFlag()){
+                                showLimitDialog(controller.getErrorMassage());
+                                controller.setErrorMessage("");
+                            }
                         }
                     }
                 } else {
                     // 如果当前行未满且已有输入，显示输入过短的提示
-                    showLimitDialog("Too Short!");
+                    if(controller.getShowErrorMessageFlag()){
+                        showLimitDialog("Too short input!");
+                        controller.setErrorMessage("");
+                    }
                 }
             } else {
-                if (currentCol < cols) { // 如果当前行未满
+                if (currentCol < controller.getCols()) { // 如果当前行未满
                     matrix[currentRow][currentCol++] = transformedLabel; // 添加输入到当前位置
                     isEnterPressed = false; // 重置 Enter 标志
                 } else {
-                    showLimitDialog("Input limit reached"); // 当前行已满，显示限制对话框
+                    if(controller.getShowErrorMessageFlag()){
+                        showLimitDialog(controller.getErrorMassage());
+                        controller.setErrorMessage("");
+                    }
                 }
             }
             repaint(); // 重绘以显示更新
         };
     }
 
-
+    /**
+     * Displays a dialog with the specified message and a rounded rectangle background.
+     *
+     * @param message The message to display in the dialog.
+     */
     private void showLimitDialog(String message) {
         JDialog dialog = new JDialog((Frame) null, true);
         dialog.setSize(300, 100);
@@ -495,27 +633,44 @@ class RoundedButton extends JButton {
 
         // 鼠标悬停效果
         addMouseListener(new MouseAdapter() {
+            /**
+             * Invoked when the mouse enters the component.
+             *
+             * @param evt The {@link MouseEvent} associated with this event.
+             */
             @Override
             public void mouseEntered(MouseEvent evt) {
                 if (!getModel().isPressed() && !colorSetByGame) {
                     setBackground(HOVER_COLOR);
                 }
             }
-
+            /**
+             * Invoked when the mouse exits the component.
+             *
+             * @param evt The {@link MouseEvent} associated with this event.
+             */
             @Override
             public void mouseExited(MouseEvent evt) {
                 if (!getModel().isPressed() && !colorSetByGame) {
                     setBackground(BACKGROUND_COLOR);
                 }
             }
-
+            /**
+             * Invoked when a mouse button has been pressed on a component.
+             *
+             * @param evt The {@link MouseEvent} associated with this event.
+             */
             @Override
             public void mousePressed(MouseEvent evt) {
                 if (!colorSetByGame) {
                     setBackground(PRESSED_COLOR);
                 }
             }
-
+            /**
+             * Invoked when a mouse button has been released on a component.
+             *
+             * @param evt The {@link MouseEvent} associated with this event.
+             */
             @Override
             public void mouseReleased(MouseEvent evt) {
                 if (!colorSetByGame) {
@@ -524,14 +679,27 @@ class RoundedButton extends JButton {
             }
         });
     }
+    /**
+     * Sets the background color of the button based on the game feedback.
+     *
+     * @param color The color to set as the background.
+     */
     public void setColorByGame(Color color) {
         setBackground(color);
         colorSetByGame = true;
     }
+    /**
+     * Resets the background color of the button to the default color.
+     */
     public void resetColor() {
         setBackground(BACKGROUND_COLOR);
         colorSetByGame = false;
     }
+    /**
+     * Paints the component with rounded corners.
+     *
+     * @param g The {@link Graphics} context used for painting.
+     */
     @Override
     protected void paintComponent(Graphics g) {
         Graphics2D g2d = (Graphics2D) g;
@@ -540,6 +708,14 @@ class RoundedButton extends JButton {
         g2d.fill(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, ARC_WIDTH, ARC_HEIGHT));
         super.paintComponent(g);
     }
+    /**
+     * updates the colors of the buttons based on the feedback from the game.
+     *
+     * @param buttons The size of the font to create.
+     * @param CORRECT The file path of the font to load.
+     * @param INCORRECT The list of buttons to update.
+     * @param WRONG_POSITION The list of buttons to update.
+     */
     public static void updateButtonColors(java.util.List<RoundedButton> buttons, ArrayList<String> CORRECT, ArrayList<String> INCORRECT, ArrayList<String> WRONG_POSITION) {
         // 遍历所有按钮，根据它们的标签更新背景颜色
         for (RoundedButton button : buttons) {
@@ -561,7 +737,13 @@ class RoundedButton extends JButton {
 
     }
 
-
+    /**
+     * Loads a font from the specified file path and size.
+     *
+     * @param path The file path of the font to load.
+     * @param size The size of the font to create.
+     * @return The loaded font, or a default font if the file cannot be loaded.
+     */
     private static Font loadFont(String path, float size) {
         try {
             Font font = Font.createFont(Font.TRUETYPE_FONT, new File(path)).deriveFont(size);
@@ -572,7 +754,11 @@ class RoundedButton extends JButton {
             return new JButton().getFont();
         }
     }
-
+    /**
+     * Returns the preferred size of the button.
+     *
+     * @return The preferred size of the button.
+     */
     @Override
     public Dimension getPreferredSize() {
         return new Dimension(super.getPreferredSize().width, 56);

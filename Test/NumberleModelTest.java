@@ -1,5 +1,6 @@
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,7 +20,6 @@ class NumberleModelTest {
         model.handleInput("=", model.playerInput);
         model.handleInput("4", model.playerInput);
         assertEquals("Continue", model.compareEquations(model.listToString(model.playerInput), model.targetEquation));
-        model.incrementAttempts();
         model.clearPlayerInput();
         model.handleInput("1", model.playerInput);
         System.out.println(model.listToString(model.playerInput));
@@ -30,7 +30,6 @@ class NumberleModelTest {
         model.handleInput("=", model.playerInput);
         model.handleInput("1", model.playerInput);
         assertEquals("Continue", model.compareEquations(model.listToString(model.playerInput), model.targetEquation));
-        model.incrementAttempts();
         model.clearPlayerInput();
         model.handleInput("1", model.playerInput);
         model.handleInput("+", model.playerInput);
@@ -44,28 +43,9 @@ class NumberleModelTest {
 
     @Test
     //测试猜测四次
-    void testGuessFourTimesWin(){
+    void testGuessFourTimesWin() {
         NumberleModel model = new NumberleModel();
         model.setDefaultEquation();
-        model.handleInput("1", model.playerInput);
-        model.handleInput("+", model.playerInput);
-        model.handleInput("1", model.playerInput);
-        model.handleInput("+", model.playerInput);
-        model.handleInput("2", model.playerInput);
-        model.handleInput("=", model.playerInput);
-        model.handleInput("4", model.playerInput);
-        assertEquals("Continue", model.compareEquations(model.listToString(model.playerInput), model.targetEquation));
-        model.incrementAttempts();
-        model.clearPlayerInput();
-        model.handleInput("1", model.playerInput);
-        model.handleInput("+", model.playerInput);
-        model.handleInput("2", model.playerInput);
-        model.handleInput("-", model.playerInput);
-        model.handleInput("2", model.playerInput);
-        model.handleInput("=", model.playerInput);
-        model.handleInput("1", model.playerInput);
-        assertEquals("Continue", model.compareEquations(model.listToString(model.playerInput), model.targetEquation));
-        model.incrementAttempts();
         model.clearPlayerInput();
         model.handleInput("1", model.playerInput);
         model.handleInput("+", model.playerInput);
@@ -75,7 +55,24 @@ class NumberleModelTest {
         model.handleInput("=", model.playerInput);
         model.handleInput("6", model.playerInput);
         assertEquals("Continue", model.compareEquations(model.listToString(model.playerInput), model.targetEquation));
-        model.incrementAttempts();
+        model.clearPlayerInput();
+        model.handleInput("1", model.playerInput);
+        model.handleInput("+", model.playerInput);
+        model.handleInput("1", model.playerInput);
+        model.handleInput("+", model.playerInput);
+        model.handleInput("4", model.playerInput);
+        model.handleInput("=", model.playerInput);
+        model.handleInput("6", model.playerInput);
+        assertEquals("Continue", model.compareEquations(model.listToString(model.playerInput), model.targetEquation));
+        model.clearPlayerInput();
+        model.handleInput("1", model.playerInput);
+        model.handleInput("+", model.playerInput);
+        model.handleInput("1", model.playerInput);
+        model.handleInput("+", model.playerInput);
+        model.handleInput("4", model.playerInput);
+        model.handleInput("=", model.playerInput);
+        model.handleInput("6", model.playerInput);
+        assertEquals("Continue", model.compareEquations(model.listToString(model.playerInput), model.targetEquation));
         model.clearPlayerInput();
         model.handleInput("1", model.playerInput);
         model.handleInput("+", model.playerInput);
@@ -99,7 +96,6 @@ class NumberleModelTest {
         model.handleInput("=", model.playerInput);
         model.handleInput("4", model.playerInput);
         assertEquals("Continue", model.compareEquations(model.listToString(model.playerInput), model.targetEquation));
-        model.incrementAttempts();
         model.clearPlayerInput();
         model.handleInput("1", model.playerInput);
         model.handleInput("+", model.playerInput);
@@ -109,7 +105,6 @@ class NumberleModelTest {
         model.handleInput("=", model.playerInput);
         model.handleInput("1", model.playerInput);
         assertEquals("Continue", model.compareEquations(model.listToString(model.playerInput), model.targetEquation));
-        model.incrementAttempts();
         model.clearPlayerInput();
         model.handleInput("1", model.playerInput);
         model.handleInput("+", model.playerInput);
@@ -119,7 +114,6 @@ class NumberleModelTest {
         model.handleInput("=", model.playerInput);
         model.handleInput("6", model.playerInput);
         assertEquals("Continue", model.compareEquations(model.listToString(model.playerInput), model.targetEquation));
-        model.incrementAttempts();
         model.clearPlayerInput();
         model.handleInput("1", model.playerInput);
         model.handleInput("+", model.playerInput);
@@ -129,7 +123,6 @@ class NumberleModelTest {
         model.handleInput("=", model.playerInput);
         model.handleInput("7", model.playerInput);
         assertEquals("Continue", model.compareEquations(model.listToString(model.playerInput), model.targetEquation));
-        model.incrementAttempts();
         model.clearPlayerInput();
         model.handleInput("1", model.playerInput);
         model.handleInput("+", model.playerInput);
@@ -139,7 +132,6 @@ class NumberleModelTest {
         model.handleInput("=", model.playerInput);
         model.handleInput("9", model.playerInput);
         assertEquals("Continue", model.compareEquations(model.listToString(model.playerInput), model.targetEquation));
-        model.incrementAttempts();
         model.clearPlayerInput();
         model.handleInput("1", model.playerInput);
         model.handleInput("+", model.playerInput);
@@ -163,7 +155,6 @@ class NumberleModelTest {
         model.handleInput("=", model.playerInput);
         model.handleInput("4", model.playerInput);
         assertEquals("Continue", model.compareEquations(model.listToString(model.playerInput), model.targetEquation));
-        model.incrementAttempts();
         model.clearPlayerInput();
         model.handleInput("1", model.playerInput);
         model.handleInput("+", model.playerInput);
@@ -173,7 +164,6 @@ class NumberleModelTest {
         model.handleInput("=", model.playerInput);
         model.handleInput("1", model.playerInput);
         assertEquals("Continue", model.compareEquations(model.listToString(model.playerInput), model.targetEquation));
-        model.incrementAttempts();
         model.clearPlayerInput();
         model.handleInput("1", model.playerInput);
         model.handleInput("+", model.playerInput);
@@ -183,7 +173,6 @@ class NumberleModelTest {
         model.handleInput("=", model.playerInput);
         model.handleInput("6", model.playerInput);
         assertEquals("Continue", model.compareEquations(model.listToString(model.playerInput), model.targetEquation));
-        model.incrementAttempts();
         model.clearPlayerInput();
         model.handleInput("1", model.playerInput);
         model.handleInput("+", model.playerInput);
@@ -193,7 +182,6 @@ class NumberleModelTest {
         model.handleInput("=", model.playerInput);
         model.handleInput("7", model.playerInput);
         assertEquals("Continue", model.compareEquations(model.listToString(model.playerInput), model.targetEquation));
-        model.incrementAttempts();
         model.clearPlayerInput();
         model.handleInput("1", model.playerInput);
         model.handleInput("+", model.playerInput);
@@ -203,7 +191,6 @@ class NumberleModelTest {
         model.handleInput("=", model.playerInput);
         model.handleInput("9", model.playerInput);
         assertEquals("Continue", model.compareEquations(model.listToString(model.playerInput), model.targetEquation));
-        model.incrementAttempts();
         model.clearPlayerInput();
         model.handleInput("1", model.playerInput);
         model.handleInput("+", model.playerInput);
