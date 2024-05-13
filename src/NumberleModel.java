@@ -406,14 +406,17 @@ public class NumberleModel extends Observable implements INumberleModel {
         }
         currentRow++;
         System.out.println(feedback); // Print feedback comparison
-
-        if (!incorrectValues.isEmpty()) {
-            System.out.println("Completely incorrect values: " + incorrectValues.toString());
-            System.out.println("Correct content, wrong position values: " + WRONG_POSITION.toString());
-            System.out.println("Correct position and value: " + CORRECT.toString());
-        } else {
-            System.out.println("No completely incorrect values.");
+        System.out.println("Completely incorrect values: " + incorrectValues.toString());
+        System.out.println("Correct content, wrong position values: " + WRONG_POSITION.toString());
+        System.out.println("Correct position and value: " + CORRECT.toString());
+        // 判断哪些VALID_CHARS里的字符没有在incorrectValues，CORRECT，WRONG_POSITION里,并且添加到列表unselectedChars里
+        List<Character> unselectedChars = new ArrayList<>();
+        for (Character ch : VALID_CHARS) {
+            if (!incorrectValues.contains(ch) && !CORRECT.contains(String.valueOf(ch)) && !WRONG_POSITION.contains(String.valueOf(ch))) {
+                unselectedChars.add(ch);
+            }
         }
+        System.out.println("Unselected characters: " + unselectedChars.toString());
         if (isAllCorrect) {
             System.out.println("Congratulations, you guessed right! Game won.");
             attempts++;
@@ -477,7 +480,6 @@ public class NumberleModel extends Observable implements INumberleModel {
             double leftValue = evaluate(parts[0]);
             double rightValue = evaluate(parts[1]);
             boolean isValid = Math.abs(leftValue - rightValue) < 0.0001;
-            assert isValid : "Postcondition failed: The left and right parts of the equation do not match";
 
             setChanged();
             notifyObservers("ValidEquation");

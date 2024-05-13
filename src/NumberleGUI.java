@@ -3,5 +3,6 @@ public class NumberleGUI {
         NumberleModel model = new NumberleModel();
         NumberleController controller = new NumberleController(model);
         NumberleView view = new NumberleView(controller);
+        view.initGUI();
     }
 }

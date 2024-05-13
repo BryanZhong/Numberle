@@ -53,7 +53,6 @@ public class NumberleCLI {
                         if (model.isValidEquation(model.listToString(playerInput))) {
                             String result;
                             result=model.compareEquations(model.listToString(playerInput), model.targetEquation);
-                            System.out.println(attempts);
                             System.out.println(result);
                             if(result=="Win"){
                                 System.exit(0);
