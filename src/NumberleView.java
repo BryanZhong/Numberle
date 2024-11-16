@@ -94,7 +94,7 @@ public class NumberleView extends JPanel implements Observer {
         }
 
         // Load and modify the font directly
-        Font customFont = loadFont("D:/download/Montserrat,Open_Sans/Montserrat/Montserrat-VariableFont_wght.ttf", 28f).deriveFont(Font.BOLD);
+        Font customFont = loadFont("../Numberle/Font/Montserrat/Montserrat-VariableFont_wght.ttf", 28f).deriveFont(Font.BOLD);
         g2d.setFont(customFont);
         g2d.setColor(new Color(0x393E4C)); // Set text color
         String[][] matrix_print = new String[controller.getRows()][controller.getCols()];
@@ -597,7 +597,7 @@ public class NumberleView extends JPanel implements Observer {
         dialog.add(panel);
 
         // 使用与按钮相同的字体风格和颜色
-        Font font = loadFont("D:/download/Montserrat,Open_Sans/Montserrat/Montserrat-VariableFont_wght.ttf", 20f).deriveFont(Font.BOLD);
+        Font font = loadFont("../Numberle/Font/Montserrat/Montserrat-VariableFont_wght.ttf", 20f).deriveFont(Font.BOLD);
         JLabel label = new JLabel(message, JLabel.CENTER);
         label.setFont(font);
         label.setForeground(new Color(0x393E4C)); // 设置文本颜色
@@ -622,7 +622,7 @@ class RoundedButton extends JButton {
     public RoundedButton(String text) {
         super(text);
         // 更新setFont调用以包含Font.BOLD
-        Font font = loadFont("D:/download/Montserrat,Open_Sans/Montserrat/Montserrat-VariableFont_wght.ttf", 20f).deriveFont(Font.BOLD);
+        Font font = loadFont("../Numberle/Font/Montserrat/Montserrat-VariableFont_wght.ttf", 20f).deriveFont(Font.BOLD);
         setFont(font);
         setForeground(FONT_COLOR); // 使用新的字体颜色
         setBackground(BACKGROUND_COLOR);
