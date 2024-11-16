@@ -507,7 +507,10 @@ public class NumberleView extends JPanel implements Observer {
                     isEnterPressed = false; // 重置 Enter 标志
                 } else if (currentRow > 0 && !isEnterPressed) {
                     // 如果当前列为 0，且不在第一行，且未按下 Enter 移动到这一行，不执行删除
-                    showLimitDialog("Cannot delete previous row!");
+                    if(controller.getShowErrorMessageFlag()){
+                        showLimitDialog("Cannot delete previous row!");
+                        controller.setErrorMessage("");
+                    }
                 }
             } else if ("Enter".equals(transformedLabel)) {
                 if (currentCol == controller.getCols()) { // 如果当前行已满
